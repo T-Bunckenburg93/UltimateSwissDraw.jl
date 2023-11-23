@@ -1,6 +1,6 @@
-using SwissDraw
+using UltimateSwissDraw
 using Test
 
-@testset "SwissDraw.jl" begin
+@testset "UltimateSwissDraw.jl" begin
     # Write your tests here.
 end

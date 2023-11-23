@@ -8,20 +8,42 @@ using DataFrames, JuMP
 
 # Init some sample data for testing and development
 
+# _teams = String[
+#     "Scuba Doos",
+#     "Green Mambas",
+#     "Quill",
+#     "Beyblades",
+#     "HighSchool",
+#     "Cultimate",
+#     "Big2",
+#     "squid",
+#     "Royals",
+#     "Force",
+#     "Crew",
+#     "QuillSkill",
+#     # "Yeet",
+# ]
+
+
 _teams = String[
-    "Scuba Doos",
-    "Green Mambas",
-    "Quill",
-    "Beyblades",
-    "HighSchool",
-    "Cultimate",
-    "Big2",
-    "squid",
-    "Royals",
-    "Force",
-    "Crew",
-    "QuillSkill",
-    # "Yeet",
+"T_Thunder",
+"Tcookies",
+"Htron",
+"Axiom",
+"Ethos",
+"GG",
+"Morri",
+"Mount",
+"Whakatu",
+"Patch",
+"MUA",
+"AUUC",
+"Euphoria",
+"Radiance",
+"Gen3",
+"Luminance",
+"Duck",
+"Wow",
 ]
 
 _rank = collect(1:size(_teams,1))
@@ -61,6 +83,11 @@ mutable struct Round
     roundNumber::Int
     playedGames::Array{Game}
 end
+
+
+
+
+
 
 
 function CreateFirstRound(_df::DataFrame,bye::Symbol=:middle)
@@ -177,10 +204,9 @@ end
 
 
 
-
-
 """
-This function takes a set of rankings and bye information, a list of previous games, and the bye indicator, 
+This function takes a list of previous games, and the bye indicator, 
+It calculates the rankings, and looks at prior games.
 it calculates who is next best to play each other, based on score. 
 
 It returns a nextRound objects that are games to be played
