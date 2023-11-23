@@ -14,8 +14,8 @@ firstRound= CreateFirstRound(dataIn)
 # run round randomly
 for i in firstRound.gamesToPlay
     if i.teamB != "BYE" && i.teamA != "BYE"
-        i.teamAScore = rand(0:15)
-        i.teamBScore = rand(0:15)
+        i.teamAScore = rand(0:13)
+        i.teamBScore = rand(0:13)
     elseif i.teamB == "BYE"
         i.teamAScore = 13
     elseif i.teamA == "BYE"
@@ -24,11 +24,8 @@ for i in firstRound.gamesToPlay
 end
 
 
-
 # ok, so now we want to save this as a round
 round1 = Round(1,firstRound.gamesToPlay)
-
-
 
 # now we create the second game
 secondRound =CreateNextRound(round1.playedGames,:middle)
@@ -38,8 +35,8 @@ secondRound.gamesToPlay
 # run round randomly
 for i in secondRound.gamesToPlay
     if i.teamB != "BYE" && i.teamA != "BYE"
-        i.teamAScore = rand(0:15)
-        i.teamBScore = rand(0:15)
+        i.teamAScore = rand(0:13)
+        i.teamBScore = rand(0:13)
     elseif i.teamB == "BYE"
         i.teamAScore = 13
     elseif i.teamA == "BYE"
@@ -49,8 +46,6 @@ end
 
 # ok, so now we want to save this as a round
 round2 = Round(2,secondRound.gamesToPlay)
-
-
 
 gamesPlayed2 = vcat(
     round1.playedGames, 
@@ -62,13 +57,12 @@ thirdRound = CreateNextRound(gamesPlayed2,:middle)
 @show rankings(gamesPlayed2);
 
 
-
 thirdRound.gamesToPlay
 # run round randomly
 for i in thirdRound.gamesToPlay
     if i.teamB != "BYE" && i.teamA != "BYE"
-        i.teamAScore = rand(0:15)
-        i.teamBScore = rand(0:15)
+        i.teamAScore = rand(0:13)
+        i.teamBScore = rand(0:13)
     elseif i.teamB == "BYE"
         i.teamAScore = 13
     elseif i.teamA == "BYE"

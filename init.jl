@@ -21,7 +21,7 @@ _teams = String[
     "Force",
     "Crew",
     "QuillSkill",
-    "Yeet",
+    # "Yeet",
 ]
 
 _rank = collect(1:size(_teams,1))
