@@ -63,6 +63,72 @@ mutable struct Round
 end
 
 
+function CreateFirstRound(_df::DataFrame,bye::Symbol=:middle)
+
+    df = deepcopy(_df)
+
+    g = Game[]
+    # first check if df is odd:
+    if isodd(size(df,1))
+   
+        if bye == :middle
+            ind = Int(ceil(size(df,1)/2))
+
+            # add the bye to the byegame object
+            byeGame = Game(df[ind,:].team,"BYE","",0,0)
+            push!(g,byeGame)
+            # and RM the team
+            deleteat!(df,ind)
+
+        end
+        if bye == :first
+            ind = 1
+
+            # add the bye to the byegame object
+            byeGame = Game(df[ind,:].team,"BYE","",0,0)
+            push!(g,byeGame)
+            # and RM the team
+            deleteat!(df,ind)
+            
+        end
+        if bye == :last
+            ind = size(df,1)
+
+            # add the bye to the byegame object
+            byeGame = Game(df[ind,:].team,"BYE","",0,0)
+            push!(g,byeGame)
+            # and RM the team
+            deleteat!(df,ind)
+            
+        end
+    end
+
+    # order the teams so that we can join the top of the top half to the top of the bottom
+    # if there were 8 teams, 1 -> 5, 2 -> 6 etc
+    df._rank = collect(1:size(df,1))
+
+    sz = floor(size(df,1)/2)
+
+    df._rank_match = df._rank .+ sz
+    
+    # And join them together 
+    pairings = innerjoin(
+                select(df,[:team, :_rank_match,]),
+                select(df,[:team, :_rank]),
+                on = :_rank_match => :_rank, renamecols = "_left" => "_right")
+            
+    
+
+    for i in eachrow(pairings)
+        push!(g, Game(i.team_left, i.team_right, "", 0, 0))
+    end
+
+    NextRound = nextRound(g) # create a nextround object from the list of games.
+    return NextRound;
+
+end
+
+
 """
     rankings(gamesPlayed::Vector{Game})
 
@@ -125,92 +191,81 @@ and prior byes, so that a single team won't have more than one bye.
 If there are an odd number of teams, the bye position decides if it goes to the first rank,
 bottom ranked, or middle ranked team, first taking into consideration the the points above.
 """
-# function CreateNextRound(prevGames::Vector{Game},bye::Symbol=:middle)
-    prevGames = gamesPlayed
-    bye = :middle
+function CreateNextRound(prevGames::Vector{Game},bye::Symbol=:middle)
+    # prevGames = gamesPlayed
+    # bye = :middle
     df = rankings(prevGames)
 
-    df_noBye = deepcopy(filter(x->x.byeA == 0
-    # && x.teamA != "BYE" 
-    ,df))
-    
-    df_noBye.bye_this_round .= 0
-    df.bye_this_round .= 0
-
-    
     g = Game[]
 
-    # first check if df is odd:
-    if isodd(size(df_noBye,1))
-
-        if bye ∉ [:first, :middle, :last]
-            @warn "Odd number of teams and there is not a correct Bye indicator"
-        end
-
-        if bye == :middle
-            ind = Int(ceil(size(df_noBye,1)/2))
-
-            # add the bye to the byegame object
-            byeGame = Game(df_noBye[ind,:].teamA,"BYE","",0,0)
-            push!(g,byeGame)
-            # and RM the team
-            df_noBye.bye_this_round[ind] = 1
-            # deleteat!(df_noBye,ind)
-
-        end
-        if bye == :first
-            ind = 1
-
-            # add the bye to the byegame object
-            byeGame = Game(df_noBye[ind,:].teamA,"BYE","",0,0)
-            push!(g,byeGame)
-            # and RM the team
-            df_noBye.bye_this_round[ind] = 1
-            # deleteat!(df_noBye,ind)
-            
-        end
-        if bye == :last
-            ind = size(df_noBye,1) - 1 # this is so that we skip up past the BYE, which will be the bottom
-
-            # add the bye to the byegame object
-            byeGame = Game(df_noBye[ind,:].teamA,"BYE","",0,0)
-            push!(g,byeGame)
-            # and RM the team
-            df_noBye.bye_this_round[ind] = 1
-            # deleteat!(df_noBye,ind)
-
-        end
-    end
-    df_noBye
-
-    df_out = select(
-                    vcat(
-                        df_noBye,
-                        filter(x->x.byeA == 1  ,df),
-                        )
-                    ,[:teamA,:rank,:bye_this_round]
-                    )
-    sort!(df_out,:teamA,rev=true)
-    # ok, so now we need to find the best combination of pairs where they haven't played prior.
-    games2Allocate = sort(filter(x->x.bye_this_round == 0 && x.teamA != "BYE",df_out),:teamA)
+    # # ok, so now we need to find the best combination of pairs where they haven't played prior.
+    sort!(df,:teamA,rev=true)
 
     # This is just linear algebra?
+    # lets make some cost matricies
 
-    sz = size(games2Allocate,1)
+    sz = size(df,1)
     costM = zeros(sz,sz)
 
     for i in 1:sz
         for j in 1:sz
 
-            costM[i,j] = max(abs.(games2Allocate.rank[i] - games2Allocate.rank[j]),(games2Allocate.bye_this_round[i] + games2Allocate.bye_this_round[j])*1000)
+            # This makes large matchups more costly
+            costM[i,j] = max(abs.(df.rank[i] - df.rank[j]))
+
+            # # This stops teams from playing themself
             if i == j 
-                costM[i,j] = 1000
+                costM[i,j] += 1000
             end
 
+            # This prevents teams that have had a bye from having another one
+            if ((df.teamA[i]=="BYE" && df.byeA[j]==1 ) || (df.teamA[j]=="BYE" && df.byeA[i]==1 ))
+                costM[i,j] += 1000
+            end
+
+            ## and add a cost for where the bye might go based on rank
+            ## the following code explains the rankings
+
+            # n = collect(1:14)
+            # szN = size(n,1)
+            # # top.  want it to get progressively larger from 1
+            # # we can literally just use the rank
+            # n
+            # # for last, we want to start large and get smaller 
+            # sz +1 .- n
+            # # for middle, we want to start small and get larger
+            # abs.(szN/2 .- n)
+
+            if bye == :middle 
+                if df.teamA[i]=="BYE" 
+                    costM[i,j] += abs.(size(df.rank,1)/2 .- df.rank[j])
+
+                elseif df.teamA[j]=="BYE" 
+                    costM[i,j] += abs.(size(df.rank,1)/2 .- df.rank[i])
+                end
+
+            elseif bye == :first 
+                if df.teamA[i]=="BYE" 
+                    costM[i,j] += df.rank[j]
+
+                elseif df.teamA[j]=="BYE" 
+                    costM[i,j] += df.rank[i]
+                end
+
+            elseif bye == :last 
+                if df.teamA[i]=="BYE" 
+                    costM[i,j] += df.rank[j]
+
+                elseif df.teamA[j]=="BYE" 
+                    costM[i,j] +=  size(df.rank,1) +1 .- df.rank[i]
+                end
+            end
         end
     end
 
-    costM
+
+costM
+
 
     # and now find the matrix of previous plays 
     prevGameDf = DataFrame(teamA = String[],teamB = String[])
@@ -227,7 +282,7 @@ bottom ranked, or middle ranked team, first taking into consideration the the po
 
     # ok so we remove the and games that are not being played
     score_df = unstack(prevGameDf, :teamA, :teamB, :exclude,fill = 0)
-    sort!(filter!(x->(x.teamA ∈ games2Allocate.teamA ) , score_df),:teamA)
+    sort!(filter!(x->(x.teamA ∈ df.teamA ) , score_df),:teamA,rev=true)
 
     # this ensures that the matrix is ordered alphabetically
     prevGamesM = Matrix(select(score_df,score_df.teamA))
@@ -271,7 +326,7 @@ bottom ranked, or middle ranked team, first taking into consideration the the po
     rename!(games2Add,:team=>:teamA,:variable=>:teamB)
 
     if size(filter(x->x.teamA == x.teamB,games2Add),1) > 0
-        @warn "One or more Teams have been pair with themself"
+        @warn "One or more Teams have been paired with themself"
     end
 
     _teams = String[] 
@@ -290,7 +345,7 @@ bottom ranked, or middle ranked team, first taking into consideration the the po
     return NextRound;
 end 
 
-
+# NextRound.gamesToPlay
 # CreateNextRound(round1.playedGames,:middle)
 # CreateNextRound(round1.playedGames,:first)
 # CreateNextRound(round1.playedGames,:last)
@@ -298,3 +353,16 @@ end
 # rankings(
 #     vcat(round1.playedGames,round2.playedGames)
 # )
+
+
+
+# number 1:14
+
+
+
+
+
+
+n = 1
+
+n += 1
