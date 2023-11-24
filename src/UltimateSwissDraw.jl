@@ -1,4 +1,4 @@
-module SwissDraw
+module UltimateSwissDraw
 
 # Write your package code here.
 

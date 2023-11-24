@@ -1,15 +1,20 @@
 
 include("init.jl")
 
-using OneHotArrays, LinearAlgebra, JuMP, Cbc, GLPK
+
+println("### Starting Simulation ###")
+println("###")
+println("###")
+using OneHotArrays, LinearAlgebra, JuMP, Cbc, GLPK, COSMO
 
 dataIn = deepcopy(sampleData)
+dataIn = deepcopy(sampleData)
 
-dataIn
+fieldDF = deepcopy(_fieldDF)
 # ok, so round 1 is pretty easy. we split the team in half and across the skill gap. 
 # if there is a bye it can go to three places. The middle, the 
-firstRound= CreateFirstRound(dataIn)
-
+firstRound= CreateFirstRound(dataIn,fieldDF)
+firstRound.gamesToPlay
 
 # run round randomly
 for i in firstRound.gamesToPlay
@@ -26,12 +31,11 @@ end
 
 # ok, so now we want to save this as a round
 round1 = Round(1,firstRound.gamesToPlay)
-
-# now we create the second game
-secondRound =CreateNextRound(round1.playedGames,:middle)
+# Show the curent rankings, and find the next set of games
 @show rankings(round1.playedGames)
+secondRound =CreateNextRound(round1.playedGames,_fieldDF)
 
-secondRound.gamesToPlay
+
 # run round randomly
 for i in secondRound.gamesToPlay
     if i.teamB != "BYE" && i.teamA != "BYE"
@@ -44,6 +48,7 @@ for i in secondRound.gamesToPlay
     end
 end
 
+
 # ok, so now we want to save this as a round
 round2 = Round(2,secondRound.gamesToPlay)
 
@@ -51,13 +56,12 @@ gamesPlayed2 = vcat(
     round1.playedGames, 
     round2.playedGames
     )
-
-thirdRound = CreateNextRound(gamesPlayed2,:middle)
-
+# Show the curent rankings, and find the next set of games
 @show rankings(gamesPlayed2);
+thirdRound = CreateNextRound(gamesPlayed2,_fieldDF)
 
 
-thirdRound.gamesToPlay
+
 # run round randomly
 for i in thirdRound.gamesToPlay
     if i.teamB != "BYE" && i.teamA != "BYE"
@@ -79,3 +83,6 @@ gamesPlayed3 = vcat(
     )
 
 @show rankings(gamesPlayed3);
+thirdRound = CreateNextRound(gamesPlayed2,_fieldDF);
+
+thirdRound.gamesToPlay
