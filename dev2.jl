@@ -8,7 +8,7 @@ dataIn = deepcopy(sampleData)
 dataIn
 # ok, so round 1 is pretty easy. we split the team in half and across the skill gap. 
 # if there is a bye it can go to three places. The middle, the 
-firstRound= CreateFirstRound(dataIn)
+firstRound= CreateFirstRound(dataIn,fieldDF)
 
 
 firstRound.gamesToPlay
@@ -56,7 +56,7 @@ firstRound.gamesToPlay[9].teamBScore = 4
 round1 = Round(1,firstRound.gamesToPlay)
 
 # now we create the second game
-secondRound =CreateNextRound(round1.playedGames,:middle)
+secondRound =CreateNextRound(round1.playedGames,_fieldDF)
 @show rankings(round1.playedGames)
 
 secondRound.gamesToPlay
@@ -78,7 +78,7 @@ gamesPlayed2 = vcat(
     round2.playedGames
     )
 
-thirdRound = CreateNextRound(gamesPlayed2,:middle)
+    thirdRound = CreateNextRound(gamesPlayed2,_fieldDF)
 
 @show rankings(gamesPlayed2);
 

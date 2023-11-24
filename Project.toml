@@ -4,12 +4,14 @@ authors = ["Tim Bunckenburg"]
 version = "1.0.0-DEV"
 
 [deps]
+COSMO = "1e616198-aa4e-51ec-90a2-23f7fbd31d8d"
 Cbc = "9961bab8-2fa3-5c5a-9d89-47fab24efd76"
 Dash = "1b08a953-4be3-4667-9a23-3db579824955"
 DashBootstrapComponents = "1b08a953-4be3-4667-9a23-fa6d05876a1e"
 DashCoreComponents = "1b08a953-4be3-4667-9a23-9da06441d987"
 DashHtmlComponents = "1b08a953-4be3-4667-9a23-24100242a84a"
 GLPK = "60bf3e95-4087-53dc-ae20-288a0d20c6a6"
+Gadfly = "c91e804a-d5a3-530f-b6f0-dfbca275c004"
 Gtk = "4c0ca9eb-093a-5379-98c5-f87ac0bbbf44"
 IOCapture = "b5f81e59-6552-4d32-b1f0-c071b021bf89"
 JuMP = "4076af6c-e467-56ae-b986-b466b2749572"
@@ -17,7 +19,7 @@ LinearAlgebra = "37e2e46d-f89d-539d-b4ee-838fcccc9c8e"
 OneHotArrays = "0b1bfda6-eb8a-41d2-88d8-f5af5cad476f"
 
 [compat]
-julia = "1"
+julia = "1.9"
 
 [extras]
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
