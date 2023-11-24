@@ -86,3 +86,5 @@ gamesPlayed3 = vcat(
 thirdRound = CreateNextRound(gamesPlayed2,_fieldDF);
 
 thirdRound.gamesToPlay
+
+filter(x->x.fieldNumber == 1,  gamesPlayed3)

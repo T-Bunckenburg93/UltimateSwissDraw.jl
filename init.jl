@@ -367,12 +367,12 @@ for i in 1:teamSz
             # If none of the teams have had a streamed game, make it likely that they get one,
             # else make team pairings with a streamed game unlikely to not get it. 
 
-
-           
            if fdf.stream[k] == true 
                 if df.streamed[i] + df.streamed[j] == 0
                     # incentivise lower teams to get streams 
-                    costStream[i,j,k] = (teamSz - (df.rank[i]+ df.rank[j])/2) /teamSz
+
+                    # this should be thought over later, as its a bit poos
+                    costStream[i,j,k] = ((teamSz - max(df.rank[i],df.rank[j])) / teamSz) -1
                 else 
                     costStream[i,j,k] = 10
                 end
