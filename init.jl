@@ -5,7 +5,17 @@ Pkg.instantiate();
 Pkg.status();
 # Pkg.resolve();
 
-using DataFrames, JuMP
+using DataFrames, JuMP, CSV
+
+function tellMoi(objectIwantToKnowAbout)
+
+    fieldnames(typeof(x))
+    println(typeof(x))
+    println(fieldnames(typeof(x)));
+    
+end
+
+
 
 # Init some sample data for testing and development
 
@@ -65,6 +75,8 @@ stream = [true, true, false, false, false, false, false, false, false, false]
 
 _fieldDF = sort(DataFrame(number = field_Number, x = field_x, y= field_y, stream= stream),:number)
 
+CSV.write("./field_distances.csv", _fieldDF)
+
 # sort(_fieldDF,:number)
 
 fieldN = size(field_Number,1)
@@ -84,6 +96,36 @@ end
 distMax = maximum(distanceM)
 # plot(x = field_x, y = field_y, Geom.point)
 
+"""
+    Field Layout is a struct that holds the field information as a dataframe, 
+    as well as a distance matrix for the fields relationship between each other.
+
+"""
+mutable struct fieldLayout
+    fieldDF::DataFrame
+    distanceMatrix::Array{Float64}
+    distanceMax::Float64
+end
+
+
+function createFieldLayout(_fieldDF::DataFrame)
+
+    _fieldN = size(sort(_fieldDF,:number),1)
+    
+    _distanceM = zeros(fieldN,fieldN)
+    for i in 1:fieldN
+        for j in 1:fieldN
+    
+            _distanceM[i,j] = sqrt((_fieldDF.x[i]-_fieldDF.x[j])^2 + (_fieldDF.y[i]-_fieldDF.y[j])^2)
+    
+        end 
+    end
+    _distMax = maximum(distanceM)
+
+    return fieldLayout(_fieldDF,_distanceM,_distMax)
+end
+
+x = createFieldLayout(_fieldDF)
 
 
 
@@ -121,19 +163,39 @@ mutable struct Round
 end
 
 
-
-
 """
 extend_to_n(matrix, n)
 takes a 2 dimensional matrix and returns a 3 dimensional matrix, 
 with the third dimension being the size of n. 
 
 each 'slice' is the original matrix
+
+ie 
+extend_to_n([1], n)
+
+1x1x2 Array{Int64, 3}:
+[:, :, 1] =
+ 1 2
+
+[:, :, 2] =
+ 1 2
 """
-function extend_to_n(matrix, n)
+function extend_to_n(matrix::AbstractArray, n)
     return cat([matrix for _ in 1:n]..., dims=3)
 end
+# extend_to_n([1 2], 2)
 
+
+# I think I need an object to hold the field information, as well as the dist matrix
+
+
+
+
+# I also need to create the entire swissDraw Object that holds everything.
+
+# I want some utility functions to update things,
+# as well as a few fuctions that generate charts. 
+# and some functions to write things out to CSV
 
 
 
@@ -379,8 +441,7 @@ for i in 1:teamSz
 
             # then if its not a streamed field, we don't mind too much, but would like 
             # to play teams that have had at least one stream if we can, so we don't 
-            # kill potential pairings for the next round.
-
+            # kill potential pairings for the next round
             elseif fdf.stream[k] == false
                 if df.streamed[i] + df.streamed[j] == 1
                     costStream[i,j,k] = 0
