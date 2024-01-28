@@ -14,33 +14,34 @@ _fieldDF
 
 Draw = createSwissDraw(sampleData,_fieldDF)
 
-Draw.currentRound
+print(Draw.currentRound)
 
-updateScore!(Draw,"Mount","Duck",1,100)
-
-
-size(Draw.previousRound,1)
-
-dump(
-Draw.currentRound.Games
-)
+# ok, so we want to switch some fields around
+# We might do this to fuck with streaming
+switchFields!(Draw,1,5)
+switchFields!(Draw,2,6)
 
 
+# update some scores
+updateScore!(Draw,"Whakatu","Wow",1,15)
+updateScore!(Draw,"Mount","Duck",1,15)
+updateScore!(Draw,"Morri","Luminance",1,15)
+updateScore!(Draw,"GG","Gen3",1,15)
+updateScore!(Draw,"Ethos","Radiance",1,15)
+updateScore!(Draw,"Axiom","Euphoria",1,15)
+updateScore!(Draw,"Htron","AUUC",1,15)
+updateScore!(Draw,"Tcookies","MUA",1,15)
+
+# wait actually, a mistake was made and two teams that shouldn't have played each other did. 
+SwitchTeams!(Draw,"Tcookies","AUUC")
+
+# Now we reupdate the scores.. How good
+updateScore!(Draw,"Htron","Tcookies",1,15)
+updateScore!(Draw,"AUUC","MUA",1,100)
 
 
-ta = "Whakatu"
-tb = "Luminance"
-
-Set([ta,tb])
-
-["Mount"]
 
 
-
-games2Mod = filter(x->x.teamA in Set([ta,tb]) || x.teamB in Set([ta,tb]) ,Draw.currentRound.Games)
-
-game2Mod[1].teamAScore = 10
-game2Mod[1].teamBScore = 15
 
 
 
