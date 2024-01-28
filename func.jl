@@ -15,70 +15,32 @@ mutable struct Game
     streamed::Bool
 end
 
-Base.show(io::IO, z::Game) = print(io,z.teamA,"' plays '", z.teamB,"' on Field: ",z.fieldNumber,", Score: [",z.teamAScore,":",z.teamBScore,"], Streamed = ",z.streamed ) 
+Base.show(io::IO, z::Game) = print(io,"'",z.teamA,"' plays '", z.teamB,"' on Field: ",z.fieldNumber,", Score: ",z.teamAScore," - ",z.teamBScore,", Streamed = ",z.streamed ) 
 
 
 Game("teamA","teamB",1,0,0,false)
 
-"""
-nextRound
-The next games that are yet to be played.
-"""
-mutable struct nextRound
-    gamesToPlay::Array{Game}
-end
 
-
-
-# # Base.show(io::IO, z::nextRound) = display(io,z)
-# Base.show(io::IO, z::nextRound) =  print(io, MIME"text/plain", z)
-
-function Base.show(io::IO, z::nextRound) 
-    println(io,"Next Round is:")
-    println()
-    println.(io, z.gamesToPlay)
-    
-end
-
-
-
-10
-
-x = 
-nextRound([
-    Game(
-    "teamA",
-    "teamB",
-    1,
-    0,
-    0,
-    false
-    
-    ), 
-    Game(
-    "teamC",
-    "teamD",
-    2,
-    0,
-    0,
-    false
-    
-    )
-])
-
-
-show(x);
-
-dump(x)
 
 """
-Round:
-A set of games that have all been played at the same time.
+RoundOfGames:
+A set of games that are all been played at the same time. 
+These are time agnostic, and this object may hold games that have completed or are yet to complete
 """
-mutable struct Round
+mutable struct RoundOfGames
+    Games::Array{Game}
     roundNumber::Int
-    playedGames::Array{Game}
 end 
+
+function Base.show(io::IO, z::RoundOfGames) 
+    println()
+    println(io,"Round Number: ", z.roundNumber)
+    # println()
+    println.(io,"   ", z.Games)
+    # println()
+
+end
+
 
 
 """
@@ -100,9 +62,29 @@ mutable struct SwissDraw
     layout::fieldLayout
     bye::Symbol
 
-    currentRound::nextRound
-    previousRound::Array{Round}
+    currentRound::RoundOfGames
+    previousRound::Array{RoundOfGames}
 
+end
+
+
+function Base.show(io::IO, z::SwissDraw) 
+
+    println()
+    println(io,"This Swiss draw contains ", size(z.initialRanking,1), " teams" )
+    println()
+
+    if size(z.previousRound) != 0 
+        show.(io,z.previousRound)
+    end
+
+
+    println()
+    println(io, "The current/next round is" )
+    show(io,z.currentRound)
+    # println()
+    
+    
 end
 
 
@@ -119,7 +101,7 @@ function createSwissDraw(_initialRanking::DataFrame,_fieldDF::DataFrame,_bye::Sy
     _fieldlayout = createFieldLayout(_fieldDF::DataFrame)
     currentRound = CreateFirstRound(_initialRanking,_fieldlayout,_bye)
 
-    swissDraw = SwissDraw(_initialRanking,_fieldlayout,_bye,currentRound,Array{Round}[])
+    swissDraw = SwissDraw(_initialRanking,_fieldlayout,_bye,currentRound,Array{RoundOfGames}[])
     return swissDraw
 
 end
@@ -228,7 +210,7 @@ function CreateFirstRound(_df::DataFrame,_fieldLayout::fieldLayout,bye::Symbol=:
         push!(g, Game(i.team_left, i.team_right, i.number, 0, 0, i.stream))
     end
 
-    NextRound = nextRound(g) # create a nextround object from the list of games.
+    NextRound = RoundOfGames(g,1) # create a nextround object from the list of games.
     return NextRound;
 
 end
@@ -603,5 +585,49 @@ function CreateNextRound(prevGames::Vector{Game},_fieldLayout::fieldLayout ,bye:
 end;
 
 # ok, so now we want mutation functions. ie to update/add outcome of a game. 
+"""
+updateScore!(_SwissDraw, _teamA::String, _teamB::String, _teamAScore::Int64, _teamBScore::Int64)
+    This updates a score if the teams are present in the round, or prints a warning. 
+    if the team has already been updated, the score is not changed.  
+"""
+function updateScore!(_SwissDraw, _teamA::String, _teamB::String, _teamAScore::Int64, _teamBScore::Int64)
+
+    game2Update = filter(x->x.teamA == _teamA && x.teamB == _teamB,_SwissDraw.currentRound.Games)
+
+    if size(game2Update,1) != 1 
+        println("The teams $_teamA and $_teamB don't seem to be playing each other this round")
+        println("")
+        println.("  ",_SwissDraw.currentRound.Games)
+        return
+    end
+
+    if  game2Update[1].teamAScore == _teamAScore && game2Update[1].teamBScore == _teamBScore
+        println("No changes to the score detected")
+        println("")
+        println(game2Update)
+        return
+    end
+
+    oldGame = deepcopy(game2Update)
+
+    game2Update[1].teamAScore = _teamAScore
+    game2Update[1].teamBScore = _teamBScore
+
+    println("You've updated this game:")  
+    println("Previously it was:")  
+    println(oldGame)
+    println("Now it is:")  
+    println(game2Update)
+    println()
+
+    return
+end
 
 
+
+function SwitchTeams(_SwissDraw, _teamA::String, _teamB::String)
+
+    teamsToSwitch = [_teamA,_teamB]
+    games2Mod = filter(x->x.teamA in Set(teamsToSwitch) || x.teamB in Set(teamsToSwitch) ,Draw.currentRound.Games)
+
+end
