@@ -1,13 +1,11 @@
-
 include("init.jl")
 
 
 println("### Starting Simulation ###")
 println("###")
 println("###")
-using OneHotArrays, LinearAlgebra, JuMP, Cbc, GLPK, COSMO
+using OneHotArrays, LinearAlgebra, JuMP, GLPK
 
-dataIn = deepcopy(sampleData)
 dataIn = deepcopy(sampleData)
 
 fieldDF = deepcopy(_fieldDF)
