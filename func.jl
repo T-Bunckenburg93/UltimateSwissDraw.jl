@@ -680,11 +680,11 @@ function updateScore!(_SwissDraw, _teamA::String, _teamB::String, _teamAScore::I
 end
 
 
-intersect(["a","b"],["a","b","c"])
+# intersect(["a","b"],["a","b","c"])
 
-Draw.initialRanking.team
+# Draw.initialRanking.team
 
-issubset(["Whakatu", "Luminance2"],Draw.initialRanking.team)
+# issubset(["Whakatu", "Luminance2"],Draw.initialRanking.team)
 
 
 function SwitchTeams!(_SwissDraw, _teamA::String, _teamB::String)
@@ -1059,7 +1059,7 @@ function CreateNextRound!(_SwissDraw)
 
 end
 
-CreateNextRound!(Draw)
+# CreateNextRound!(Draw)
 
-Draw
+# Draw
 
