@@ -1,4 +1,4 @@
-using DataFrames, JuMP
+using DataFrames, JuMP, Dates
 
 ### Customer structures that we use and can operate on
 
@@ -93,6 +93,8 @@ mutable struct SwissDraw
     currentRound::RoundOfGames
     previousRound::Array{RoundOfGames}
 
+    AllChanges::Array{changeLog}
+
 end
 
 
@@ -129,7 +131,7 @@ function createSwissDraw(_initialRanking::DataFrame,_fieldDF::DataFrame,_bye::Sy
     _fieldlayout = createFieldLayout(_fieldDF::DataFrame)
     currentRound = CreateFirstRound(_initialRanking,_fieldlayout,_bye)
 
-    swissDraw = SwissDraw(_initialRanking,_fieldlayout,_bye,currentRound,Array{RoundOfGames}[])
+    swissDraw = SwissDraw(_initialRanking,_fieldlayout,_bye,currentRound,Array{RoundOfGames}[],Array{changeLog}[])
     return swissDraw
 
 end
@@ -322,9 +324,49 @@ function rankings(gamesPlayed::RoundOfGames)
     rankingsDf.rank = collect(1:size(rankingsDf,1))
 
     return rankingsDf
-
 end
 
+function rankings(_swissDraw::SwissDraw)
+
+    # create a dataframe from the gamesplayed to get an overview of the situation
+    df  = DataFrame(teamA = String[], teamB = String[],margin=Int[], teamAscore = Int[],teamBscore = Int[],stream=Bool[],val = Int[])
+
+    # allTeams = String[]
+    
+    for j in _swissDraw.previousRound
+        for i in j.Games
+            push!(df, (i.teamA, i.teamB,i.teamAScore-i.teamBScore,i.teamAScore,i.teamBScore,i.streamed,1 ), promote=true)
+            push!(df, (i.teamB, i.teamA,i.teamBScore-i.teamAScore,i.teamBScore,i.teamAScore,i.streamed,-1), promote=true)
+        end
+    end
+
+
+    # deduce some stats.
+    df.winA = Int.(df.teamAscore .> df.teamBscore)
+    df.lossA = Int.(df.teamAscore .< df.teamBscore)
+    df.drawA = Int.(df.teamAscore .== df.teamBscore)
+    df.byeA = Int.(df.teamB .== "BYE")
+    df.played = Int.(df.teamB .!= "BYE")
+    df.streamed = Int.(df.stream)
+
+    # and create the ranking from WL
+    df.modified_margin = 3*df.winA .+ df.drawA
+
+    # combine the rankings by team
+    rankingsDf = combine(
+            groupby(df,:teamA),
+                            [:modified_margin,:margin,:played,:winA,:lossA,:drawA,:streamed] 
+                .=> sum .=> [:modified_margin,:margin,:played,:winA,:lossA,:drawA,:streamed] 
+                )
+
+    sort!(rankingsDf,[:modified_margin,:margin], rev = true)
+
+    rankingsDf.rank = collect(1:size(rankingsDf,1))
+
+    return rankingsDf
+end
+
+rankings(Draw)
 
 """
 Takes a lookup table of distance matrix, and 
@@ -639,13 +681,34 @@ end
 
 # ok, so now we want mutation functions. ie to update/add outcome of a game. 
 """
-updateScore!(_SwissDraw, _teamA::String, _teamB::String, _teamAScore::Int64, _teamBScore::Int64)
+updateScore!(_SwissDraw, _teamA::String, _teamB::String, _teamAScore::Int64, _teamBScore::Int64,round=missing)
     This updates a score if the teams are present in the round, or prints a warning. 
     if the team has already been updated, the score is not changed.  
+    
+    By default this will modify the latest round. 
+    specifiying a round number will attempt to change that round
+    
 """
-function updateScore!(_SwissDraw, _teamA::String, _teamB::String, _teamAScore::Int64, _teamBScore::Int64)
+function updateScore!(_SwissDraw, _teamA::String, _teamB::String, _teamAScore::Int64, _teamBScore::Int64,_round=missing)
 
-    game2Update = filter(x->x.teamA == _teamA && x.teamB == _teamB,_SwissDraw.currentRound.Games)
+    
+    Round2Change = []
+
+    # Check to see if we are changing the current round or a previous round
+    if ismissing(_round)
+        Round2Change = _SwissDraw.currentRound.Games
+    else
+        Round2Change =  filter(x->x.roundNumber == _round,_SwissDraw.previousRound )[1].Games
+
+        if size(Round2Change,1) == 0 
+            println("Round $round not found")
+            return
+        end
+
+        println("Modifying Round $round")
+    end
+
+    game2Update = filter(x->x.teamA == _teamA && x.teamB == _teamB,Round2Change)
 
     if size(game2Update,1) != 1 
         println("The teams $_teamA and $_teamB don't seem to be playing each other this round")
@@ -680,17 +743,27 @@ function updateScore!(_SwissDraw, _teamA::String, _teamB::String, _teamAScore::I
 end
 
 
-# intersect(["a","b"],["a","b","c"])
 
-# Draw.initialRanking.team
-
-# issubset(["Whakatu", "Luminance2"],Draw.initialRanking.team)
-
-
-function SwitchTeams!(_SwissDraw, _teamA::String, _teamB::String)
+function SwitchTeams!(_SwissDraw, _teamA::String, _teamB::String,_round=missing)
 
     teamsToSwitch = [_teamA,_teamB]
-    games2Mod = filter(x->x.teamA in Set(teamsToSwitch) || x.teamB in Set(teamsToSwitch) ,_SwissDraw.currentRound.Games)
+
+    Round2Change = []
+
+    # Check to see if we are changing the current round or a previous round
+    if ismissing(_round)
+        Round2Change = _SwissDraw.currentRound.Games
+    else
+        Round2Change =  filter(x->x.roundNumber == _round,_SwissDraw.previousRound )[1].Games
+
+        if size(Round2Change,1) == 0 
+            println("Round $round not found")
+            return
+        end
+
+        println("Modifying Round $round")
+    end
+    games2Mod = filter(x->x.teamA in Set(teamsToSwitch) || x.teamB in Set(teamsToSwitch) ,Round2Change)
 
 
     if issubset(teamsToSwitch,_SwissDraw.initialRanking.team) == false
@@ -748,20 +821,33 @@ function SwitchTeams!(_SwissDraw, _teamA::String, _teamB::String)
 
 
 end
-# SwitchTeams!(Draw,"Whakatu","Luminance")
+# SwitchTeams!(Draw,"Whakatu","Luminance",1)
 
 
-function switchFields!(_SwissDraw, _field1::Int, _field2::Int)
+function switchFields!(_SwissDraw, _field1::Int, _field2::Int,_round=missing)
 
     fields2Switch = [_field1,_field2]
 
-    for i in Draw.currentRound.Games
-        i.fieldNumber = switchVals!(i.fieldNumber,fields2Switch)
+    Round2Change = []
+
+    # Check to see if we are changing the current round or a previous round
+    if ismissing(_round)
+        Round2Change = _SwissDraw.currentRound.Games
+    else
+        Round2Change =  filter(x->x.roundNumber == _round,_SwissDraw.previousRound )[1].Games
+
+        if size(Round2Change,1) == 0 
+            println("Round $round not found")
+            return
+        end
+
+        println("Modifying Round $round")
     end
+
     
     println("The teams playing on fields $_field1 and $_field2 have been switched")
 
-    newGames = filter(x->x.fieldNumber in Set(fields2Switch) ,_SwissDraw.currentRound.Games)
+    newGames = filter(x->x.fieldNumber in Set(fields2Switch) ,Round2Changes)
     println.("New roster is: ", )
     println.(newGames)
     println()
@@ -1059,7 +1145,11 @@ function CreateNextRound!(_SwissDraw)
 
 end
 
-# CreateNextRound!(Draw)
 
-# Draw
 
+
+struct changeLog
+    date::DateTime
+    initalVal
+    changedVal
+end
