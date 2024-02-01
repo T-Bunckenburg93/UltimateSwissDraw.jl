@@ -1,13 +1,49 @@
+using Test
+using OneHotArrays, LinearAlgebra, JuMP, GLPK
 
-
-include("testData.jl")
 include("func.jl")
 
+_teams = String[
+"T_Thunder",
+"Tcookies",
+"Htron",
+"Axiom",
+"Ethos",
+"GG",
+"Morri",
+"Mount",
+"Whakatu",
+"Patch",
+"MUA",
+"AUUC",
+"Euphoria",
+"Radiance",
+"Gen3",
+"Luminance",
+"Duck",
+"Wow",
+]
 
-println("### Starting Simulation ###")
-println("###")
-println("###")
-using OneHotArrays, LinearAlgebra, JuMP, GLPK
+_rank = collect(1:size(_teams,1))
+
+# Create some sample data that we can test and build on
+sampleData = DataFrame(team = _teams, rank = _rank)
+
+
+# Ok, so we need a distance matrix for each field
+# field plots as xy
+
+# may need to turn this into a function to make it do all the things
+
+field_x = [2, 2, 3, 2, 2, 2, 2, 3, 2, 3 ]
+field_y = [1, 4, 1, 3, 5, 7, 9, 9, 11, 11]
+field_Number = [1, 2 , 3, 4, 5, 6, 7, 8, 9, 10 ]
+stream = [true, true, false, false, false, false, false, false, false, false] 
+
+_fieldDF = sort(DataFrame(number = field_Number, x = field_x, y= field_y, stream= stream),:number)
+
+
+
 
 sampleData
 _fieldDF
@@ -37,7 +73,7 @@ SwitchTeams!(Draw,"Tcookies","AUUC")
 
 # Now we reupdate the scores.. How good
 updateScore!(Draw,"Htron","Tcookies",1,15)
-updateScore!(Draw,"AUUC","MUA",0,15)
+updateScore!(Draw,"AUUC","MUA",1,100)
 
 # And now we calculates
 CreateNextRound!(Draw)
@@ -49,37 +85,9 @@ CreateNextRound!(Draw)
     Draw.previousRound
 # Very good
 
-# Draw.AllChanges
+Draw.AllChanges
 
-Draw.currentRound
 
-show(rankings(Draw))
-
-updateScore!(Draw,"Axiom","Ethos",14,15)
-updateScore!(Draw,"AUUC","Htron",10,12)
-updateScore!(Draw,"Gen3","Radiance",9,7)
-updateScore!(Draw,"GG","Morri",15,11)
-updateScore!(Draw,"Mount","Patch",10,3)
-updateScore!(Draw,"Duck","Luminance",10,7)
-updateScore!(Draw,"T_Thunder","Whakatu",9,7)
-updateScore!(Draw,"Euphoria","Tcookies",15,6)
-updateScore!(Draw,"MUA","Wow",12,9)
-
-Draw.currentRound
-
-CreateNextRound!(Draw)
-show(rankings(Draw))
-Draw.currentRound
-
-updateScore!(Draw,"Patch","Tcookies",14,10)
-updateScore!(Draw,"Morri","Wow",15,1)
-updateScore!(Draw,"Htron","MUA",11,7)
-updateScore!(Draw,"Axiom","Gen3",15,11)
-updateScore!(Draw,"Ethos","T_Thunder",10,8)
-updateScore!(Draw,"Duck","GG",10,15)
-updateScore!(Draw,"Euphoria","Mount",9,7)
-updateScore!(Draw,"AUUC","Radiance",15,6)
-updateScore!(Draw,"Luminance","Whakatu",12,9)
 
 
 
