@@ -37,93 +37,49 @@ SwitchTeams!(Draw,"Tcookies","AUUC")
 
 # Now we reupdate the scores.. How good
 updateScore!(Draw,"Htron","Tcookies",1,15)
-updateScore!(Draw,"AUUC","MUA",1,100)
+updateScore!(Draw,"AUUC","MUA",0,15)
+
+# And now we calculates
+CreateNextRound!(Draw)
+
+# ok, lets test that we can change previous outcomes
+    initialRank = rankings(Draw)
+    updateScore!(Draw,"AUUC","MUA",100,1,1)
+    updatedRank = rankings(Draw)
+    Draw.previousRound
+# Very good
+
+# Draw.AllChanges
+
+Draw.currentRound
+
+show(rankings(Draw))
+
+updateScore!(Draw,"Axiom","Ethos",14,15)
+updateScore!(Draw,"AUUC","Htron",10,12)
+updateScore!(Draw,"Gen3","Radiance",9,7)
+updateScore!(Draw,"GG","Morri",15,11)
+updateScore!(Draw,"Mount","Patch",10,3)
+updateScore!(Draw,"Duck","Luminance",10,7)
+updateScore!(Draw,"T_Thunder","Whakatu",9,7)
+updateScore!(Draw,"Euphoria","Tcookies",15,6)
+updateScore!(Draw,"MUA","Wow",12,9)
+
+Draw.currentRound
+
+CreateNextRound!(Draw)
+show(rankings(Draw))
+Draw.currentRound
+
+updateScore!(Draw,"Patch","Tcookies",14,10)
+updateScore!(Draw,"Morri","Wow",15,1)
+updateScore!(Draw,"Htron","MUA",11,7)
+updateScore!(Draw,"Axiom","Gen3",15,11)
+updateScore!(Draw,"Ethos","T_Thunder",10,8)
+updateScore!(Draw,"Duck","GG",10,15)
+updateScore!(Draw,"Euphoria","Mount",9,7)
+updateScore!(Draw,"AUUC","Radiance",15,6)
+updateScore!(Draw,"Luminance","Whakatu",12,9)
 
 
 
-
-
-
-
-
-
-# fieldLay = createFieldLayout(_fieldDF)
-
-
-# # ok, so round 1 is pretty easy. we split the team in half and across the skill gap. 
-# # if there is a bye it can go to three places. The middle, the 
-# firstRound= CreateFirstRound(dataIn,fieldLay)
-# firstRound.gamesToPlay
-
-# # run round randomly
-# for i in firstRound.gamesToPlay
-#     if i.teamB != "BYE" && i.teamA != "BYE"
-#         i.teamAScore = rand(0:13)
-#         i.teamBScore = rand(0:13)
-#     elseif i.teamB == "BYE"
-#         i.teamAScore = 13
-#     elseif i.teamA == "BYE"
-#         i.teamBScore = 13
-#     end
-# end
-
-
-# # ok, so now we want to save this as a round
-# round1 = Round(1,firstRound.gamesToPlay)
-# # Show the curent rankings, and find the next set of games
-# @show rankings(round1.playedGames)
-# secondRound =CreateNextRound(round1.playedGames,fieldLay)
-
-
-# # run round randomly
-# for i in secondRound.gamesToPlay
-#     if i.teamB != "BYE" && i.teamA != "BYE"
-#         i.teamAScore = rand(0:13)
-#         i.teamBScore = rand(0:13)
-#     elseif i.teamB == "BYE"
-#         i.teamAScore = 13
-#     elseif i.teamA == "BYE"
-#         i.teamBScore = 13
-#     end
-# end
-
-
-# # ok, so now we want to save this as a round
-# round2 = Round(2,secondRound.gamesToPlay)
-
-# gamesPlayed2 = vcat(
-#     round1.playedGames, 
-#     round2.playedGames
-#     )
-# # Show the curent rankings, and find the next set of games
-# @show rankings(gamesPlayed2);
-# thirdRound = CreateNextRound(gamesPlayed2,fieldLay)
-
-
-
-# # run round randomly
-# for i in thirdRound.gamesToPlay
-#     if i.teamB != "BYE" && i.teamA != "BYE"
-#         i.teamAScore = rand(0:13)
-#         i.teamBScore = rand(0:13)
-#     elseif i.teamB == "BYE"
-#         i.teamAScore = 13
-#     elseif i.teamA == "BYE"
-#         i.teamBScore = 13
-#     end
-# end
-# round3 = Round(3,thirdRound.gamesToPlay)
-
-
-# gamesPlayed3 = vcat(
-#     round1.playedGames, 
-#     round2.playedGames,
-#     round3.playedGames
-#     )
-
-# @show rankings(gamesPlayed3);
-# thirdRound = CreateNextRound(gamesPlayed2,fieldLay);
-
-# thirdRound.gamesToPlay
-
-# filter(x->x.fieldNumber == 1,  gamesPlayed3)
