@@ -1,4 +1,5 @@
 include("init.jl")
+include("func.jl")
 
 # using OneHotArrays, LinearAlgebra, JuMP, GLPK, Mousetrap, CSV, DataFrames
 
@@ -18,6 +19,7 @@ filething = []
 
 
 
+
 main() do app::Application
     window = Window(app)
 
@@ -26,6 +28,26 @@ main() do app::Application
 
     set_title!(window, "Swiss Draw") 
     # set_size_request!(window, Vector2f(500,500)) 
+
+        
+    _swissDrawObject = SwissDraw(
+        DataFrame(
+                team = [],
+                Rank = []
+                ),
+        fieldLayout(DataFrame(),
+                    Array{Float64}[],
+                    0
+                    ),
+        :middle,
+        RoundOfGames(
+            Array{Game}[],
+            0
+            ),
+        Array{RoundOfGames}[],
+        Array{changeLog}[]
+    )
+
 
     newDraw = Button()
     set_child!(newDraw, Label("New Draw"))
@@ -60,7 +82,7 @@ main() do app::Application
 
     # Does what it says on the tin
 
-    _teamPath = ""
+    _teamPath = "C:\\Users\\tbunc\\github\\SwissDraw.jl\\intial_teams.csv"
 
     addTeam = Button()
     set_child!(addTeam, Label("Add Teams"))
@@ -83,7 +105,7 @@ main() do app::Application
     end
 
     # Does what it says on the tin
-    _fieldPath = ""
+    _fieldPath = "C:\\Users\\tbunc\\github\\SwissDraw.jl\\field_distances.csv"
 
     addFields = Button()
     set_child!(addFields, Label("Add Fields"))
@@ -107,12 +129,12 @@ main() do app::Application
 
 
 
-    loadDraw = Button()
-    set_child!(loadDraw, Label("LoadDraw"))
+    # loadDraw = Button()
+    # set_child!(loadDraw, Label("LoadDraw"))
 
-    connect_signal_clicked!(loadDraw) do self::Button
-        println("clicked Load Draw")
-    end
+    # connect_signal_clicked!(loadDraw) do self::Button
+    #     println("clicked Load Draw")
+    # end
 
     getStats = Button()
     set_child!(getStats, Label("Get Stats"))
@@ -122,7 +144,35 @@ main() do app::Application
 
         println(_teamPath," & ", _fieldPath)
 
-        # SwissDraw = createSwissDraw(DataFrame(_teamPath),DataFrame(_fieldPath))
+        _swissDrawObject = createSwissDraw(DataFrame(CSV.File(_teamPath)),DataFrame(CSV.File(_fieldPath)))
+
+        dump(_swissDrawObject)
+
+        # Once we create the swiss draw, we can update the round calculationa
+        column_view = ColumnView()
+
+        field = push_back_column!(column_view, "Field #")
+        TeamA = push_back_column!(column_view, "Team A")
+        # TeamAScore = push_back_column!(column_view, "Team A Score")
+        TeamB = push_back_column!(column_view, "Team B")
+        for (v,i) in enumerate(_swissDrawObject.currentRound.Games)
+
+            # firstRound.gamesToPlay[1]
+            # set_widget_at!(column_view, column, row_i, Label("0$column_i | 0$row_i"))
+            # firstRound.gamesToPlay[1].fieldNumber
+
+            set_widget_at!(column_view, field, v, Label(string(i.fieldNumber )))
+            set_widget_at!(column_view, TeamA, v, Label(string(i.teamA )))
+            set_widget_at!(column_view, TeamB, v, Label(string(i.teamB )))
+
+        end
+
+        topWindow = vbox(center_box,column_view)
+        # set_margin!(center_box, 75)
+    
+    
+        set_child!(window, topWindow)
+        present!(window)
 
     end
 
@@ -135,20 +185,21 @@ main() do app::Application
     TeamB = push_back_column!(column_view, "Team B")
     # TeamBScore = push_back_column!(column_view, "Team B Score")
 
-    for i in 1:size(firstRound.gamesToPlay,1)
+    # get the swiss draw object and pull out data from it
+    
+
+
+    for (v,i) in enumerate(_swissDrawObject.currentRound.Games)
 
         # firstRound.gamesToPlay[1]
         # set_widget_at!(column_view, column, row_i, Label("0$column_i | 0$row_i"))
         # firstRound.gamesToPlay[1].fieldNumber
 
-        set_widget_at!(column_view, field, i, Label(string(firstRound.gamesToPlay[i].fieldNumber )))
-        set_widget_at!(column_view, TeamA, i, Label(string(firstRound.gamesToPlay[i].teamA )))
-        set_widget_at!(column_view, TeamB, i, Label(string(firstRound.gamesToPlay[i].teamB )))
-
+        set_widget_at!(column_view, field, v, Label(string(i.fieldNumber )))
+        set_widget_at!(column_view, TeamA, v, Label(string(i.teamA )))
+        set_widget_at!(column_view, TeamB, v, Label(string(i.teamB )))
 
     end
-
-            
 
     set_expand!(column_view, true)
 
@@ -158,14 +209,19 @@ main() do app::Application
 
 
 
+
+
+
+
 # Need to make a better layout., can't have 2 widgets
 
     # # box = hbox( newDraw, loadDraw)
     center_box = CenterBox(ORIENTATION_HORIZONTAL,addTeam,addFields,getStats)
+    topWindow = vbox(center_box,column_view)
     # set_margin!(center_box, 75)
 
 
-    set_child!(window, center_box)
+    set_child!(window, topWindow)
     present!(window)
 
 
@@ -173,7 +229,7 @@ end
 
 
 
+# SwissDraw = createSwissDraw(DataFrame("C:\\Users\\tbunc\\github\\SwissDraw.jl\\intial_teams.csv"),DataFrame("C:\\Users\tbunc\\github\\SwissDraw.jl\\field_distances.csv"))
 
-
-get_path(f[1])
-# createSwissDraw()
+# DataFrame("C:\\Users\\tbunc\\github\\SwissDraw.jl\\intial_teams.csv")
+# DataFrame(CSV.File("C:\\Users\\tbunc\\github\\SwissDraw.jl\\intial_teams.csv"))
