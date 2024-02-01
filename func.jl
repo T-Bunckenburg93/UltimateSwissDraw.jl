@@ -72,6 +72,13 @@ mutable struct fieldLayout
     distanceMax::Float64
 end
 
+struct changeLog
+    date::DateTime
+    initalVal
+    changedVal
+end
+
+
 """
 This is the wider Swiss Draw objects. All exposed actions need to work on this object.
 
@@ -366,7 +373,7 @@ function rankings(_swissDraw::SwissDraw)
     return rankingsDf
 end
 
-rankings(Draw)
+# rankings(Draw)
 
 """
 Takes a lookup table of distance matrix, and 
@@ -739,9 +746,11 @@ function updateScore!(_SwissDraw, _teamA::String, _teamB::String, _teamAScore::I
     # println(game2Update)
     println()
 
+    change = changeLog(Dates.now(),oldGame,game2Update)
+    push!(_SwissDraw.AllChanges,change)
+
     return
 end
-
 
 
 function SwitchTeams!(_SwissDraw, _teamA::String, _teamB::String,_round=missing)
@@ -818,8 +827,9 @@ function SwitchTeams!(_SwissDraw, _teamA::String, _teamB::String,_round=missing)
     println(games2Mod)
     println("")
 
-
-
+    change = changeLog(Dates.now(),premod,games2Mod)
+    push!(_SwissDraw.AllChanges,change)
+    return
 end
 # SwitchTeams!(Draw,"Whakatu","Luminance",1)
 
@@ -847,10 +857,23 @@ function switchFields!(_SwissDraw, _field1::Int, _field2::Int,_round=missing)
     
     println("The teams playing on fields $_field1 and $_field2 have been switched")
 
-    newGames = filter(x->x.fieldNumber in Set(fields2Switch) ,Round2Changes)
+    OldGame = deepcopy(filter(x->x.fieldNumber in Set(fields2Switch) ,Round2Change))
+
+    # And switch em up 
+    for i in Round2Change
+        i.fieldNumber = switchVals!(i.fieldNumber,fields2Switch)
+    end
+
+    newGames = filter(x->x.fieldNumber in Set(fields2Switch) ,Round2Change)
+
     println.("New roster is: ", )
     println.(newGames)
     println()
+
+    change = changeLog(Dates.now(),OldGame,newGames)
+    push!(_SwissDraw.AllChanges,change)
+    return
+
 
 end
 
@@ -1148,8 +1171,3 @@ end
 
 
 
-struct changeLog
-    date::DateTime
-    initalVal
-    changedVal
-end
