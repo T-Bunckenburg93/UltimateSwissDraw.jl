@@ -14,6 +14,10 @@ firstRound.gamesToPlay[1].teamA
 
 using Mousetrap
 
+filething = []
+
+
+
 main() do app::Application
     window = Window(app)
 
@@ -23,31 +27,84 @@ main() do app::Application
     set_title!(window, "Swiss Draw") 
     # set_size_request!(window, Vector2f(500,500)) 
 
-    # set_size_request!(window, Vector2f(500,500)) 
-
     newDraw = Button()
     set_child!(newDraw, Label("New Draw"))
 
 
     connect_signal_clicked!(newDraw) do self::Button
         println("clicked New Draw")
+
         file_chooser = FileChooser(FILE_CHOOSER_ACTION_OPEN_FILE)
         filter = FileFilter("CSV")
         add_allowed_suffix!(filter, "csv")
         add_filter!(file_chooser, filter)
-        present!(file_chooser)
-
 
         on_accept!(file_chooser) do self::FileChooser, files::Vector{FileDescriptor}
+            # println(files)
+            push!(filething,files)
             println(files)
-            @show typeof(files[1])
+
+
+            # dump(files)
+            # @show typeof(files[1])
     
             # present!(window2)
-            @show get_path(files[1])
-
-
+            # @show get_path(files[1])
+            
         end
+
+        present!(file_chooser)
     end
+
+
+
+    # Does what it says on the tin
+
+    _teamPath = ""
+
+    addTeam = Button()
+    set_child!(addTeam, Label("Add Teams"))
+
+    connect_signal_clicked!(addTeam) do self::Button
+        println("Added Teams")
+
+        file_chooser = FileChooser(FILE_CHOOSER_ACTION_OPEN_FILE)
+        filter = FileFilter("CSV")
+        add_allowed_suffix!(filter, "csv")
+        add_filter!(file_chooser, filter)
+
+        on_accept!(file_chooser) do self::FileChooser, files::Vector{FileDescriptor}
+            _teamPath = get_path(files[1])
+            println(files)
+            
+        end
+
+        present!(file_chooser)
+    end
+
+    # Does what it says on the tin
+    _fieldPath = ""
+
+    addFields = Button()
+    set_child!(addFields, Label("Add Fields"))
+
+    connect_signal_clicked!(addFields) do self::Button
+        println("Added Fields")
+
+        file_chooser = FileChooser(FILE_CHOOSER_ACTION_OPEN_FILE)
+        filter = FileFilter("CSV")
+        add_allowed_suffix!(filter, "csv")
+        add_filter!(file_chooser, filter)
+
+        on_accept!(file_chooser) do self::FileChooser, files::Vector{FileDescriptor}
+            _fieldPath = get_path(files[1])
+            println(files)
+            
+        end
+
+        present!(file_chooser)
+    end
+
 
 
     loadDraw = Button()
@@ -62,8 +119,12 @@ main() do app::Application
 
     connect_signal_clicked!(getStats) do self::Button
         println("clicked get Stats")
-    end
 
+        println(_teamPath," & ", _fieldPath)
+
+        # SwissDraw = createSwissDraw(DataFrame(_teamPath),DataFrame(_fieldPath))
+
+    end
 
 
     column_view = ColumnView()
@@ -84,26 +145,27 @@ main() do app::Application
         set_widget_at!(column_view, TeamA, i, Label(string(firstRound.gamesToPlay[i].teamA )))
         set_widget_at!(column_view, TeamB, i, Label(string(firstRound.gamesToPlay[i].teamB )))
 
-        # firstRound.gamesToPlay[1].teamA
-        
-        # firstRound.gamesToPlay[1].teamB
+
     end
 
             
 
     set_expand!(column_view, true)
-    set_child!(window, column_view)
+
+    # set_child!(window, getStats)
+    # set_child!(window, column_view)
+    # set_child!(window, loadDraw)
 
 
 
 # Need to make a better layout., can't have 2 widgets
 
     # # box = hbox( newDraw, loadDraw)
-    # center_box = CenterBox(ORIENTATION_HORIZONTAL,newDraw,loadDraw,getStats)
+    center_box = CenterBox(ORIENTATION_HORIZONTAL,addTeam,addFields,getStats)
     # set_margin!(center_box, 75)
 
 
-    # set_child!(window, center_box)
+    set_child!(window, center_box)
     present!(window)
 
 
@@ -112,3 +174,6 @@ end
 
 
 
+
+get_path(f[1])
+# createSwissDraw()
