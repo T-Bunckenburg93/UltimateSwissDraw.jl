@@ -303,11 +303,13 @@ function rankings(gamesPlayed::RoundOfGames)
     # allTeams = String[]
     
     for i in gamesPlayed.Games
-        push!(df, (i.teamA, i.teamB,i.teamAScore-i.teamBScore,i.teamAScore,i.teamBScore,i.streamed,1 ), promote=true)
-        push!(df, (i.teamB, i.teamA,i.teamBScore-i.teamAScore,i.teamBScore,i.teamAScore,i.streamed,-1), promote=true)
+        push!(df, (i.teamA, i.teamB,coalesce(i.teamAScore-i.teamBScore,0),coalesce(i.teamAScore,0),coalesce(i.teamBScore,0),i.streamed,1 ), promote=true)
+        push!(df, (i.teamB, i.teamA,coalesce(i.teamBScore-i.teamAScore,0),coalesce(i.teamBScore,0),coalesce(i.teamAScore,0),i.streamed,-1), promote=true)
+
     
     end
-    
+
+        
 
     # deduce some stats.
     df.winA = Int.(coalesce.(df.teamAscore,0) .> coalesce.(df.teamBscore,0))
@@ -343,8 +345,8 @@ function rankings(_swissDraw::SwissDraw)
     
     for j in _swissDraw.previousRound
         for i in j.Games
-            push!(df, (i.teamA, i.teamB,i.teamAScore-i.teamBScore,i.teamAScore,i.teamBScore,i.streamed,1 ), promote=true)
-            push!(df, (i.teamB, i.teamA,i.teamBScore-i.teamAScore,i.teamBScore,i.teamAScore,i.streamed,-1), promote=true)
+            push!(df, (i.teamA, i.teamB,coalesce(i.teamAScore-i.teamBScore,0),coalesce(i.teamAScore,0),coalesce(i.teamBScore,0),i.streamed,1 ), promote=true)
+            push!(df, (i.teamB, i.teamA,coalesce(i.teamBScore-i.teamAScore,0),coalesce(i.teamBScore,0),coalesce(i.teamAScore,0),i.streamed,-1), promote=true)
         end
     end
 
