@@ -759,6 +759,26 @@ function updateScore!(_SwissDraw, _teamA::String, _teamB::String, _teamAScore::I
 
     return
 end
+"""
+Simple way to update a game from in  the current round based off of the index
+"""
+function updateScore!(_SwissDraw, gameIndex::Int, _teamAScore::Int64, _teamBScore::Int64)
+
+    game2Update = _SwissDraw.currentRound.Games[gameIndex]
+    
+    oldGame = deepcopy(game2Update)
+
+    game2Update[1].teamAScore = _teamAScore
+    game2Update[1].teamBScore = _teamBScore
+
+    println("You've updated this game:")  
+    println("Previously it was: ",oldGame)  
+    # println(oldGame)
+    println("Now it is: ",game2Update)  
+    # println(game2Update)
+    println()
+
+end
 
 
 function SwitchTeams!(_SwissDraw, _teamA::String, _teamB::String,_round=missing)
