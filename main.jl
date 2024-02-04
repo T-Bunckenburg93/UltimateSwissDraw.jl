@@ -1,19 +1,24 @@
-include("init.jl")
+# include("init.jl")
+using Pkg
+# set up environment and make sure all packages are present
+Pkg.activate(pwd());
+
 include("func.jl")
+
 
 # using OneHotArrays, LinearAlgebra, JuMP, GLPK, Mousetrap, CSV, DataFrames
 
 
-dataIn = deepcopy(sampleData)
+# dataIn = deepcopy(sampleData)
 
-fieldDF = deepcopy(_fieldDF)
-# ok, so round 1 is pretty easy. we split the team in half and across the skill gap. 
-# if there is a bye it can go to three places. The middle, the 
-firstRound= CreateFirstRound(dataIn,fieldDF)
-firstRound.gamesToPlay[1].teamA
+# fieldDF = deepcopy(_fieldDF)
+# # ok, so round 1 is pretty easy. we split the team in half and across the skill gap. 
+# # if there is a bye it can go to three places. The middle, the 
+# firstRound= CreateFirstRound(dataIn,fieldDF)
+# firstRound.gamesToPlay[1].teamA
 
 
-using Mousetrap
+using Mousetrap, CSV
 
 filething = []
 
@@ -137,7 +142,7 @@ main() do app::Application
     # end
 
     getStats = Button()
-    set_child!(getStats, Label("Get Stats"))
+    set_child!(getStats, Label("Get Intital Draw"))
 
     connect_signal_clicked!(getStats) do self::Button
         println("clicked get Stats")
@@ -152,23 +157,45 @@ main() do app::Application
         column_view = ColumnView()
 
         field = push_back_column!(column_view, "Field #")
+
         TeamA = push_back_column!(column_view, "Team A")
-        # TeamAScore = push_back_column!(column_view, "Team A Score")
         TeamB = push_back_column!(column_view, "Team B")
+
+        TeamAScoreVal = push_back_column!(column_view, "Team A Score")
+        TeamBScoreVal = push_back_column!(column_view, "Team B Score")
+
+        UpdateScore = push_back_column!(column_view, "Update Score")
+    
+
         for (v,i) in enumerate(_swissDrawObject.currentRound.Games)
 
-            # firstRound.gamesToPlay[1]
-            # set_widget_at!(column_view, column, row_i, Label("0$column_i | 0$row_i"))
-            # firstRound.gamesToPlay[1].fieldNumber
 
             set_widget_at!(column_view, field, v, Label(string(i.fieldNumber )))
             set_widget_at!(column_view, TeamA, v, Label(string(i.teamA )))
             set_widget_at!(column_view, TeamB, v, Label(string(i.teamB )))
+            set_widget_at!(column_view, TeamAScoreVal, v, Label(string(i.teamAScore )))
+            set_widget_at!(column_view, TeamBScoreVal, v, Label(string(i.teamBScore )))
+
+            b = Button()
+            set_child!(b, Label("Update Scores"))
+            connect_signal_clicked!(b) do self::Button
+                println("Changing the scores of ",i.teamA," and ",i.teamB)
+
+                
+
+
+            end
+            set_widget_at!(column_view, UpdateScore, v, b)
+
+
+            # Here I want to build a window widget that I can enter the score on
 
         end
-
+        clear!(topWindow)
+        # clear!(center_box)
+        # center_box = CenterBox(ORIENTATION_HOsRIZONTAL,addTeam,addFields,getStats) 
         topWindow = vbox(center_box,column_view)
-        # set_margin!(center_box, 75)
+        set_margin!(center_box, 75)
     
     
         set_child!(window, topWindow)
