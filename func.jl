@@ -768,8 +768,8 @@ function updateScore!(_SwissDraw, gameIndex::Int, _teamAScore::Int64, _teamBScor
     
     oldGame = deepcopy(game2Update)
 
-    game2Update[1].teamAScore = _teamAScore
-    game2Update[1].teamBScore = _teamBScore
+    game2Update.teamAScore = _teamAScore
+    game2Update.teamBScore = _teamBScore
 
     println("You've updated this game:")  
     println("Previously it was: ",oldGame)  
@@ -780,6 +780,10 @@ function updateScore!(_SwissDraw, gameIndex::Int, _teamAScore::Int64, _teamBScor
 
 end
 
+# Draw = createSwissDraw(DataFrame(CSV.File(_teamPath)),DataFrame(CSV.File(_fieldPath)))
+
+# Draw.currentRound.Games[1]
+# updateScore!(Draw,1,1,2)
 
 function SwitchTeams!(_SwissDraw, _teamA::String, _teamB::String,_round=missing)
 
