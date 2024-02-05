@@ -356,15 +356,37 @@ main() do app::Application
         push_back!(SwitchFields,SwitchFieldButton)
 
 
-        # Add the Save button
+        # Add the Save button so that we can close and come back later
         SaveSwissDraw = Button()
         set_child!(SaveSwissDraw, Label("Save Swiss Draw"))
 
         connect_signal_clicked!(SaveSwissDraw) do self::Button
 
-            println("Saved Swiss Draw")
+            println("Save Swiss Draw")
+            return nothing
 
         end
+
+        # add the download Current Draw
+        downloadDraw = Button()
+        set_child!(downloadDraw, Label(string("Download current round to: '", pwd(),"\\SwissDrawCurrentRound.csv'" )))
+    
+
+        connect_signal_clicked!(downloadDraw) do self::Button
+    
+            # Save current round Object
+            df = DataFrame(teamA = String[], teamB = String[], FieldNumber = Int64[])
+            for i in _swissDrawObject.currentRound.Games
+                push!(df,[i.teamA,i.teamB,i.fieldNumber])
+            end
+            # save this as a csv
+            CSV.write("SwissDrawCurrentRound.csv", df)
+            println("Saved the current round as a CSV")
+    
+        return nothing
+            
+        end
+    
 
 
         # and some formatting
@@ -374,8 +396,15 @@ main() do app::Application
         push_back!(topWindow,updateScore)
         push_back!(topWindow,SwitchTeams)
         push_back!(topWindow,SwitchFields)
-        push_back!(topWindow,Label("---------"))
-        push_back!(topWindow,SaveSwissDraw)
+        push_back!(topWindow,Label(" "))
+
+        primaryButtons = hbox()
+            push_back!(primaryButtons,downloadDraw)
+            push_back!(primaryButtons,Label(" --- "))
+            push_back!(primaryButtons,SaveSwissDraw)
+
+        push_back!(topWindow,primaryButtons)
+
         set_margin!(center_box, 75)
 
         set_child!(openLoad, topWindow)
