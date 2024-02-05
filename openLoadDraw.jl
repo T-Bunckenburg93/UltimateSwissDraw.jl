@@ -287,8 +287,8 @@ main() do app::Application
 
             # updateScore!(_swissDrawObject, Int64(matchID), Int64(_tAScore), Int64(_tBScore))
             SwitchTeams!(_swissDrawObject,
-                _swissDrawObject.initialRanking.team[teamOneID],
-                _swissDrawObject.initialRanking.team[teamTwoID]
+                String(_swissDrawObject.initialRanking.team[teamOneID]),
+                String(_swissDrawObject.initialRanking.team[teamTwoID])
                 )
             activate!(refresh)
             return nothing
