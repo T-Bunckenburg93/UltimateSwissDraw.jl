@@ -1,4 +1,4 @@
-using DataFrames, JuMP, Dates
+using DataFrames, JuMP, Dates, JLD2
 
 ### Customer structures that we use and can operate on
 
@@ -19,15 +19,16 @@ mutable struct Game
     teamA::String
     teamB::String
     fieldNumber::Int
-    teamAScore::Int
-    teamBScore::Int
+    teamAScore::Union{Int,Missing}
+    teamBScore::Union{Int,Missing}
     streamed::Bool
 end
 
 Base.show(io::IO, z::Game) = print(io,"'",z.teamA,"' plays '", z.teamB,"' on Field: ",z.fieldNumber,", Score: ",z.teamAScore," - ",z.teamBScore,", Streamed = ",z.streamed ) 
 
 
-Game("teamA","teamB",1,0,0,false)
+Game("teamA","teamB",1,missing,missing,false)
+
 
 
 
@@ -189,7 +190,7 @@ function CreateFirstRound(_df::DataFrame,_fieldLayout::fieldLayout,bye::Symbol=:
             ind = Int(ceil(size(df,1)/2))
 
             # add the bye to the byegame object
-            byeGame = Game(df[ind,:].team,"BYE",0,0,0)
+            byeGame = Game(String(df[ind,:].team),"BYE",0,missing,missing,false)
             push!(g,byeGame)
             # and RM the team
             deleteat!(df,ind)
@@ -199,7 +200,7 @@ function CreateFirstRound(_df::DataFrame,_fieldLayout::fieldLayout,bye::Symbol=:
             ind = 1
 
             # add the bye to the byegame object
-            byeGame = Game(df[ind,:].team,"BYE",0,0,0)
+            byeGame = Game(String(df[ind,:].team),"BYE",0,missing,missing,false)
             push!(g,byeGame)
             # and RM the team
             deleteat!(df,ind)
@@ -209,7 +210,7 @@ function CreateFirstRound(_df::DataFrame,_fieldLayout::fieldLayout,bye::Symbol=:
             ind = size(df,1)
 
             # add the bye to the byegame object
-            byeGame = Game(df[ind,:].team,"BYE",0,0,0)
+            byeGame = Game(String(df[ind,:].team),"BYE",0,missing,missing,false)
             push!(g,byeGame)
             # and RM the team
             deleteat!(df,ind)
@@ -244,7 +245,7 @@ function CreateFirstRound(_df::DataFrame,_fieldLayout::fieldLayout,bye::Symbol=:
     
 
     for i in eachrow(finalPairing)
-        push!(g, Game(i.team_left, i.team_right, i.number, 0, 0, i.stream))
+        push!(g, Game(i.team_left, i.team_right, i.number, missing, missing, i.stream))
     end
 
     NextRound = RoundOfGames(g,1) # create a nextround object from the list of games.
@@ -302,16 +303,18 @@ function rankings(gamesPlayed::RoundOfGames)
     # allTeams = String[]
     
     for i in gamesPlayed.Games
-        push!(df, (i.teamA, i.teamB,i.teamAScore-i.teamBScore,i.teamAScore,i.teamBScore,i.streamed,1 ), promote=true)
-        push!(df, (i.teamB, i.teamA,i.teamBScore-i.teamAScore,i.teamBScore,i.teamAScore,i.streamed,-1), promote=true)
+        push!(df, (i.teamA, i.teamB,coalesce(i.teamAScore-i.teamBScore,0),coalesce(i.teamAScore,0),coalesce(i.teamBScore,0),i.streamed,1 ), promote=true)
+        push!(df, (i.teamB, i.teamA,coalesce(i.teamBScore-i.teamAScore,0),coalesce(i.teamBScore,0),coalesce(i.teamAScore,0),i.streamed,-1), promote=true)
+
     
     end
 
+        
 
     # deduce some stats.
-    df.winA = Int.(df.teamAscore .> df.teamBscore)
-    df.lossA = Int.(df.teamAscore .< df.teamBscore)
-    df.drawA = Int.(df.teamAscore .== df.teamBscore)
+    df.winA = Int.(coalesce.(df.teamAscore,0) .> coalesce.(df.teamBscore,0))
+    df.lossA = Int.(coalesce.(df.teamAscore,0) .< coalesce.(df.teamBscore,0))
+    df.drawA = Int.(coalesce.(df.teamAscore,0) .== coalesce.(df.teamBscore,0))
     df.byeA = Int.(df.teamB .== "BYE")
     df.played = Int.(df.teamB .!= "BYE")
     df.streamed = Int.(df.stream)
@@ -342,16 +345,16 @@ function rankings(_swissDraw::SwissDraw)
     
     for j in _swissDraw.previousRound
         for i in j.Games
-            push!(df, (i.teamA, i.teamB,i.teamAScore-i.teamBScore,i.teamAScore,i.teamBScore,i.streamed,1 ), promote=true)
-            push!(df, (i.teamB, i.teamA,i.teamBScore-i.teamAScore,i.teamBScore,i.teamAScore,i.streamed,-1), promote=true)
+            push!(df, (i.teamA, i.teamB,coalesce(i.teamAScore-i.teamBScore,0),coalesce(i.teamAScore,0),coalesce(i.teamBScore,0),i.streamed,1 ), promote=true)
+            push!(df, (i.teamB, i.teamA,coalesce(i.teamBScore-i.teamAScore,0),coalesce(i.teamBScore,0),coalesce(i.teamAScore,0),i.streamed,-1), promote=true)
         end
     end
 
 
     # deduce some stats.
-    df.winA = Int.(df.teamAscore .> df.teamBscore)
-    df.lossA = Int.(df.teamAscore .< df.teamBscore)
-    df.drawA = Int.(df.teamAscore .== df.teamBscore)
+    df.winA = Int.(coalesce.(df.teamAscore,0) .> coalesce.(df.teamBscore,0))
+    df.lossA = Int.(coalesce.(df.teamAscore,0) .< coalesce.(df.teamBscore,0))
+    df.drawA = Int.(coalesce.(df.teamAscore,0) .== coalesce.(df.teamBscore,0))
     df.byeA = Int.(df.teamB .== "BYE")
     df.played = Int.(df.teamB .!= "BYE")
     df.streamed = Int.(df.stream)
@@ -652,7 +655,7 @@ function CreateNextRound(prevGames::Vector{Game},_fieldLayout::fieldLayout ,bye:
     for i in eachrow(schedule)
 
         if i.teamA ∉ _teams
-            push!(g,Game(i.teamA,i.teamB,i.field,0,0,i.stream))
+            push!(g,Game(i.teamA,i.teamB,i.field,missing,missing,i.stream))
             push!(_teams,i.teamA)
             push!(_teams,i.teamB)
         end
@@ -674,7 +677,7 @@ for example:
 
 """
 function switchVals!(val,possibleVals::AbstractArray)
-    @assert size(possibleVals,1) == 2 && size(unique(possibleVals),1) == 2 "you can only switch two values "
+    # @assert size(possibleVals,1) == 2 && size(unique(possibleVals),1) == 2 "you can only switch two values "
 
     if val == possibleVals[1]
         val = possibleVals[2]
@@ -726,7 +729,9 @@ function updateScore!(_SwissDraw, _teamA::String, _teamB::String, _teamAScore::I
         return
     end
 
-    if  game2Update[1].teamAScore == _teamAScore && game2Update[1].teamBScore == _teamBScore
+    
+
+    if  (coalesce(game2Update[1].teamAScore,0) == coalesce(_teamAScore) && coalesce(game2Update[1].teamBScore,0) == coalesce(_teamBScore)) 
         println("No changes to the score detected")
         println("")
         println(game2Update)
@@ -735,6 +740,9 @@ function updateScore!(_SwissDraw, _teamA::String, _teamB::String, _teamAScore::I
     end
 
     oldGame = deepcopy(game2Update)
+
+    
+
 
     game2Update[1].teamAScore = _teamAScore
     game2Update[1].teamBScore = _teamBScore
@@ -751,7 +759,31 @@ function updateScore!(_SwissDraw, _teamA::String, _teamB::String, _teamAScore::I
 
     return
 end
+"""
+Simple way to update a game from in  the current round based off of the index
+"""
+function updateScore!(_SwissDraw, gameIndex::Int, _teamAScore::Int64, _teamBScore::Int64)
 
+    game2Update = _SwissDraw.currentRound.Games[gameIndex]
+    
+    oldGame = deepcopy(game2Update)
+
+    game2Update.teamAScore = _teamAScore
+    game2Update.teamBScore = _teamBScore
+
+    println("You've updated this game:")  
+    println("Previously it was: ",oldGame)  
+    # println(oldGame)
+    println("Now it is: ",game2Update)  
+    # println(game2Update)
+    println()
+
+end
+
+# Draw = createSwissDraw(DataFrame(CSV.File(_teamPath)),DataFrame(CSV.File(_fieldPath)))
+
+# Draw.currentRound.Games[1]
+# updateScore!(Draw,1,1,2)
 
 function SwitchTeams!(_SwissDraw, _teamA::String, _teamB::String,_round=missing)
 
@@ -811,8 +843,8 @@ function SwitchTeams!(_SwissDraw, _teamA::String, _teamB::String,_round=missing)
         i.teamA = switchVals!(i.teamA,teamsToSwitch)
         i.teamB = switchVals!(i.teamB,teamsToSwitch)
 
-        i.teamAScore = 0
-        i.teamBScore = 0
+        i.teamAScore = missing
+        i.teamBScore = missing
         
     
     end
@@ -1149,7 +1181,7 @@ function CreateNextRound!(_SwissDraw)
     for i in eachrow(schedule)
 
         if i.teamA ∉ _teams
-            push!(g,Game(i.teamA,i.teamB,i.field,0,0,i.stream))
+            push!(g,Game(i.teamA,i.teamB,i.field,missing,missing,i.stream))
             push!(_teams,i.teamA)
             push!(_teams,i.teamB)
         end

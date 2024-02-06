@@ -1,19 +1,24 @@
-include("init.jl")
+# include("init.jl")
+using Pkg
+# set up environment and make sure all packages are present
+Pkg.activate(pwd());
+
 include("func.jl")
+
 
 # using OneHotArrays, LinearAlgebra, JuMP, GLPK, Mousetrap, CSV, DataFrames
 
 
-dataIn = deepcopy(sampleData)
+# dataIn = deepcopy(sampleData)
 
-fieldDF = deepcopy(_fieldDF)
-# ok, so round 1 is pretty easy. we split the team in half and across the skill gap. 
-# if there is a bye it can go to three places. The middle, the 
-firstRound= CreateFirstRound(dataIn,fieldDF)
-firstRound.gamesToPlay[1].teamA
+# fieldDF = deepcopy(_fieldDF)
+# # ok, so round 1 is pretty easy. we split the team in half and across the skill gap. 
+# # if there is a bye it can go to three places. The middle, the 
+# firstRound= CreateFirstRound(dataIn,fieldDF)
+# firstRound.gamesToPlay[1].teamA
 
 
-using Mousetrap
+using Mousetrap, CSV
 
 filething = []
 
@@ -137,7 +142,7 @@ main() do app::Application
     # end
 
     getStats = Button()
-    set_child!(getStats, Label("Get Stats"))
+    set_child!(getStats, Label("Get Intital Draw"))
 
     connect_signal_clicked!(getStats) do self::Button
         println("clicked get Stats")
@@ -146,33 +151,124 @@ main() do app::Application
 
         _swissDrawObject = createSwissDraw(DataFrame(CSV.File(_teamPath)),DataFrame(CSV.File(_fieldPath)))
 
-        dump(_swissDrawObject)
+        # dump(_swissDrawObject)
 
         # Once we create the swiss draw, we can update the round calculationa
         column_view = ColumnView()
 
         field = push_back_column!(column_view, "Field #")
+
         TeamA = push_back_column!(column_view, "Team A")
-        # TeamAScore = push_back_column!(column_view, "Team A Score")
         TeamB = push_back_column!(column_view, "Team B")
+
+        TeamAScoreVal = push_back_column!(column_view, "Team A Score")
+        TeamBScoreVal = push_back_column!(column_view, "Team B Score")
+
+        UpdateScore = push_back_column!(column_view, "Update Score")
+    
+
         for (v,i) in enumerate(_swissDrawObject.currentRound.Games)
 
-            # firstRound.gamesToPlay[1]
-            # set_widget_at!(column_view, column, row_i, Label("0$column_i | 0$row_i"))
-            # firstRound.gamesToPlay[1].fieldNumber
 
             set_widget_at!(column_view, field, v, Label(string(i.fieldNumber )))
             set_widget_at!(column_view, TeamA, v, Label(string(i.teamA )))
             set_widget_at!(column_view, TeamB, v, Label(string(i.teamB )))
+            set_widget_at!(column_view, TeamAScoreVal, v, Label(string(i.teamAScore )))
+            set_widget_at!(column_view, TeamBScoreVal, v, Label(string(i.teamBScore )))
+
+            # b = string("b_",v)
+            # eval(Meta.parse("$b = Button()"))
+            b = Button()
+
+            # set_child!(eval(Meta.parse("$b")), Label("Update Scores"))
+            set_child!(b, Label("Update Scores"))
+            # connect_signal_clicked!(eval(Meta.parse("$b"))) do self::Button
+            connect_signal_clicked!(b) do self::Button
+                println("Changing the scores of ",i.teamA," and ",i.teamB)
+
+                updateScoresWindow = Window(app)
+                set_hide_on_close!(updateScoresWindow,true) 
+
+                topWindow = vbox()
+            
+                _tA = i.teamA
+                _tB = i.teamB
+            
+                push_front!(topWindow, Label(string("Enter the scores below:")))
+            
+               
+                submitBox = hbox()
+            
+                # pull the values out of the spinbuttons into julia
+                teamAInputScore = SpinButton(0, 15, 1)
+                _tAScore = 0
+                connect_signal_value_changed!(teamAInputScore) do self::SpinButton
+                    _tAScore =  get_value(self)
+                    return nothing
+                end
+            
+                teamBInputScore = SpinButton(0, 15, 1)
+                _tBScore = 0
+                connect_signal_value_changed!(teamBInputScore) do self::SpinButton
+                    _tBScore =  get_value(self)
+                    return nothing
+                end
+            
+                # This Adds the buttons and the text input for the get score object     
+                push_front!(submitBox,Label(" Scores:    "))
+            
+                push_back!(submitBox,Label(string(_tA,": ")))
+                push_back!(submitBox,teamAInputScore)
+            
+                push_back!(submitBox,Label(string("     ")))
+            
+                push_back!(submitBox,Label(string(_tB,": ")))
+                push_back!(submitBox,teamBInputScore)
+            
+                push_back!(topWindow,submitBox)
+            
+            
+                # ok now we need to add a button that takes the values of the spin button, 
+                # and uses it to call the updateScore!() function.
+            
+            
+                updateGameButton = Button()
+                set_child!(updateGameButton, Label("Submit Scores"))
+            
+                connect_signal_clicked!(updateGameButton) do self::Button
+                    # I want to add run the updateScore!()
+                    # and then go back to the previous window
+                    println("TA = $_tA $_tAScore, $_tB $_tBScore")
+                    # updateScore!(_swissDrawObject,_tA,_tB,_tAScore,_tBScore)
+                    present!(window)
+                    
+                end
+            
+                push_back!(topWindow,updateGameButton)
+                set_child!(updateScoresWindow, topWindow)
+            
+                present!(updateScoresWindow)
+                return nothing
+
+
+            end
+            # set_widget_at!(column_view, UpdateScore, v, eval(Meta.parse("$b")))
+            set_widget_at!(column_view, UpdateScore, v, b)
+
+
+            # Here I want to build a window widget that I can enter the score on
 
         end
-
+        clear!(topWindow)
+        # clear!(center_box)
+        # center_box = CenterBox(ORIENTATION_HOsRIZONTAL,addTeam,addFields,getStats) 
         topWindow = vbox(center_box,column_view)
-        # set_margin!(center_box, 75)
+        set_margin!(center_box, 75)
     
     
         set_child!(window, topWindow)
         present!(window)
+        return nothing
 
     end
 
