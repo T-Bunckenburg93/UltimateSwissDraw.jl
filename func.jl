@@ -1,4 +1,4 @@
-using DataFrames, JuMP, Dates
+using DataFrames, JuMP, Dates, JLD2
 
 ### Customer structures that we use and can operate on
 
@@ -190,7 +190,7 @@ function CreateFirstRound(_df::DataFrame,_fieldLayout::fieldLayout,bye::Symbol=:
             ind = Int(ceil(size(df,1)/2))
 
             # add the bye to the byegame object
-            byeGame = Game(df[ind,:].team,"BYE",0,0,0)
+            byeGame = Game(String(df[ind,:].team),"BYE",0,missing,missing,false)
             push!(g,byeGame)
             # and RM the team
             deleteat!(df,ind)
@@ -200,7 +200,7 @@ function CreateFirstRound(_df::DataFrame,_fieldLayout::fieldLayout,bye::Symbol=:
             ind = 1
 
             # add the bye to the byegame object
-            byeGame = Game(df[ind,:].team,"BYE",0,0,0)
+            byeGame = Game(String(df[ind,:].team),"BYE",0,missing,missing,false)
             push!(g,byeGame)
             # and RM the team
             deleteat!(df,ind)
@@ -210,7 +210,7 @@ function CreateFirstRound(_df::DataFrame,_fieldLayout::fieldLayout,bye::Symbol=:
             ind = size(df,1)
 
             # add the bye to the byegame object
-            byeGame = Game(df[ind,:].team,"BYE",0,0,0)
+            byeGame = Game(String(df[ind,:].team),"BYE",0,missing,missing,false)
             push!(g,byeGame)
             # and RM the team
             deleteat!(df,ind)
@@ -677,7 +677,7 @@ for example:
 
 """
 function switchVals!(val,possibleVals::AbstractArray)
-    @assert size(possibleVals,1) == 2 && size(unique(possibleVals),1) == 2 "you can only switch two values "
+    # @assert size(possibleVals,1) == 2 && size(unique(possibleVals),1) == 2 "you can only switch two values "
 
     if val == possibleVals[1]
         val = possibleVals[2]
