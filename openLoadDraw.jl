@@ -5,7 +5,7 @@ Pkg.activate(pwd());
 include("func.jl")
 
 
-using Mousetrap, CSV
+using Mousetrap, CSV, JLD2
 
 
 filething = []
@@ -39,18 +39,32 @@ main() do app::Application
         
     end
 
+    _loadPath = ""
     LoadDraw = Button()
-    set_child!(LoadDraw, Label("Load an existing Swiss Draw"))
+    set_child!(LoadDraw, Label("Load existing Draw"))
 
     connect_signal_clicked!(LoadDraw) do self::Button
+        println("Saving Swiss Draw")
 
-        # println(get_selected(dropdownMatchup))
-        println("Loading existing Swiss Draw" )
-        # updateScore!(_swissDrawObject, Int64(matchID), Int64(_tAScore), Int64(_tBScore))
-        # activate!(refresh)
-        return nothing
-        
+        file_chooser = FileChooser(FILE_CHOOSER_ACTION_OPEN_FILE)
+        filter = FileFilter("SwissDraw")
+        add_allowed_suffix!(filter, "swissdraw")
+        add_filter!(file_chooser, filter)
+
+        on_accept!(file_chooser) do self::FileChooser, files::Vector{FileDescriptor}
+            _loadPath = get_path(files[1])
+            println(_loadPath)
+
+            # save_object(_savePath, _swissDrawObject)
+            _swissDrawObject = load_object(_loadPath)
+            activate!(refresh)
+
+        end
+
+        present!(file_chooser)
     end
+
+
 
 #= 
     Create the page to present when user hits New Draw
@@ -356,35 +370,59 @@ main() do app::Application
         push_back!(SwitchFields,SwitchFieldButton)
 
 
-        # Add the Save button so that we can close and come back later
+        _savePath = ""
         SaveSwissDraw = Button()
         set_child!(SaveSwissDraw, Label("Save Swiss Draw"))
-
+    
         connect_signal_clicked!(SaveSwissDraw) do self::Button
-
-            println("Save Swiss Draw")
+            println("Saving Swiss Draw")
+    
+            file_chooser = FileChooser(FILE_CHOOSER_ACTION_SAVE)
+            filter = FileFilter("SwissDraw")
+            add_allowed_suffix!(filter, "swissdraw")
+            add_filter!(file_chooser, filter)
+    
+            on_accept!(file_chooser) do self::FileChooser, files::Vector{FileDescriptor}
+                _savePath = get_path(files[1])
+                println(_savePath)
+    
+                save_object(_savePath, _swissDrawObject)
+            end
+    
+            present!(file_chooser)
             return nothing
-
         end
 
         # add the download Current Draw
         downloadDraw = Button()
-        set_child!(downloadDraw, Label(string("Download current round to: '", pwd(),"\\SwissDrawCurrentRound.csv'" )))
+        set_child!(downloadDraw, Label("Save Round as CSV"))
     
-
         connect_signal_clicked!(downloadDraw) do self::Button
-    
+        
             # Save current round Object
-            df = DataFrame(teamA = String[], teamB = String[], FieldNumber = Int64[])
-            for i in _swissDrawObject.currentRound.Games
-                push!(df,[i.teamA,i.teamB,i.fieldNumber])
-            end
-            # save this as a csv
-            CSV.write("SwissDrawCurrentRound.csv", df)
-            println("Saved the current round as a CSV")
+        
+            file_chooser = FileChooser(FILE_CHOOSER_ACTION_SAVE)
+            filter = FileFilter("CSV")
+            add_allowed_suffix!(filter, "csv")
+            add_filter!(file_chooser, filter)
+        
+            on_accept!(file_chooser) do self::FileChooser, files::Vector{FileDescriptor}
+        
+                _df = DataFrame(teamA = String[], teamB = String[], FieldNumber = Int64[])
+                for i in _swissDrawObject.currentRound.Games
+                    push!(_df,[i.teamA,i.teamB,i.fieldNumber])
+                end
+        
+                _downloadPath = get_path(files[1])
     
-        return nothing
-            
+                CSV.write(_downloadPath, _df)
+                println("Saved the current round as a CSV")
+                println(_downloadPath)
+        
+            end
+        
+            present!(file_chooser)
+            return nothing
         end
     
 
