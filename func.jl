@@ -1,4 +1,4 @@
-using DataFrames, JuMP, Dates, JLD2
+using DataFrames, JuMP, Dates, JLD2, GLPK
 
 ### Customer structures that we use and can operate on
 
@@ -190,7 +190,7 @@ function CreateFirstRound(_df::DataFrame,_fieldLayout::fieldLayout,bye::Symbol=:
             ind = Int(ceil(size(df,1)/2))
 
             # add the bye to the byegame object
-            byeGame = Game(String(df[ind,:].team),"BYE",0,missing,missing,false)
+            byeGame = Game(String(df[ind,:].team),"BYE",0,15,0,false)
             push!(g,byeGame)
             # and RM the team
             deleteat!(df,ind)
@@ -200,7 +200,7 @@ function CreateFirstRound(_df::DataFrame,_fieldLayout::fieldLayout,bye::Symbol=:
             ind = 1
 
             # add the bye to the byegame object
-            byeGame = Game(String(df[ind,:].team),"BYE",0,missing,missing,false)
+            byeGame = Game(String(df[ind,:].team),"BYE",0,15,0,false)
             push!(g,byeGame)
             # and RM the team
             deleteat!(df,ind)
@@ -210,7 +210,7 @@ function CreateFirstRound(_df::DataFrame,_fieldLayout::fieldLayout,bye::Symbol=:
             ind = size(df,1)
 
             # add the bye to the byegame object
-            byeGame = Game(String(df[ind,:].team),"BYE",0,missing,missing,false)
+            byeGame = Game(String(df[ind,:].team),"BYE",0,15,0,false)
             push!(g,byeGame)
             # and RM the team
             deleteat!(df,ind)
@@ -294,7 +294,7 @@ end
 
 This takes a vector of Games, and returns a ranking dataframe based on the games that have been played thus far. 
 """
-# function rankings(gamesPlayed::Vector{Game})
+
 function rankings(gamesPlayed::RoundOfGames)
 
     # create a dataframe from the gamesplayed to get an overview of the situation
@@ -336,10 +336,15 @@ function rankings(gamesPlayed::RoundOfGames)
     return rankingsDf
 end
 
-function rankings(_swissDraw::SwissDraw)
+function allRankings(_swissDraw::SwissDraw)
 
     # create a dataframe from the gamesplayed to get an overview of the situation
     df  = DataFrame(teamA = String[], teamB = String[],margin=Int[], teamAscore = Int[],teamBscore = Int[],stream=Bool[],val = Int[])
+
+    for i in _swissDraw.currentRound.Games
+        push!(df, (i.teamA, i.teamB,coalesce(i.teamAScore-i.teamBScore,0),coalesce(i.teamAScore,0),coalesce(i.teamBScore,0),i.streamed,1 ), promote=true)
+        push!(df, (i.teamB, i.teamA,coalesce(i.teamBScore-i.teamAScore,0),coalesce(i.teamBScore,0),coalesce(i.teamAScore,0),i.streamed,-1), promote=true)
+    end
 
     # allTeams = String[]
     
@@ -365,8 +370,8 @@ function rankings(_swissDraw::SwissDraw)
     # combine the rankings by team
     rankingsDf = combine(
             groupby(df,:teamA),
-                            [:modified_margin,:margin,:played,:winA,:lossA,:drawA,:streamed] 
-                .=> sum .=> [:modified_margin,:margin,:played,:winA,:lossA,:drawA,:streamed] 
+                            [:modified_margin,:margin,:played,:winA,:lossA,:drawA,:byeA,:streamed] 
+                .=> sum .=> [:modified_margin,:margin,:played,:winA,:lossA,:drawA,:byeA,:streamed] 
                 )
 
     sort!(rankingsDf,[:modified_margin,:margin], rev = true)
@@ -376,7 +381,52 @@ function rankings(_swissDraw::SwissDraw)
     return rankingsDf
 end
 
-# rankings(Draw)
+
+"""
+prevRoundsRankings(_swissDraw::SwissDraw)
+
+    Similar to allRankings(_swissDraw::SwissDraw), but only finds the rankings for previous rounds. 
+    The current round is excluded. This should be used in the context of refreshing the draw if an error 
+    is discovered (and updated) in the prior rounds  
+
+"""
+function prevRoundsRankings(_swissDraw::SwissDraw)
+
+    # create a dataframe from the gamesplayed to get an overview of the situation
+    df  = DataFrame(teamA = String[], teamB = String[],margin=Int[], teamAscore = Int[],teamBscore = Int[],stream=Bool[],val = Int[])
+    
+    for j in _swissDraw.previousRound
+        for i in j.Games
+            push!(df, (i.teamA, i.teamB,coalesce(i.teamAScore-i.teamBScore,0),coalesce(i.teamAScore,0),coalesce(i.teamBScore,0),i.streamed,1 ), promote=true)
+            push!(df, (i.teamB, i.teamA,coalesce(i.teamBScore-i.teamAScore,0),coalesce(i.teamBScore,0),coalesce(i.teamAScore,0),i.streamed,-1), promote=true)
+        end
+    end
+
+
+    # deduce some stats.
+    df.winA = Int.(coalesce.(df.teamAscore,0) .> coalesce.(df.teamBscore,0))
+    df.lossA = Int.(coalesce.(df.teamAscore,0) .< coalesce.(df.teamBscore,0))
+    df.drawA = Int.(coalesce.(df.teamAscore,0) .== coalesce.(df.teamBscore,0))
+    df.byeA = Int.(df.teamB .== "BYE")
+    df.played = Int.(df.teamB .!= "BYE")
+    df.streamed = Int.(df.stream)
+
+    # and create the ranking from WL
+    df.modified_margin = 3*df.winA .+ df.drawA
+
+    # combine the rankings by team
+    rankingsDf = combine(
+            groupby(df,:teamA),
+                            [:modified_margin,:margin,:played,:winA,:lossA,:drawA,:byeA,:streamed] 
+                .=> sum .=> [:modified_margin,:margin,:played,:winA,:lossA,:drawA,:byeA,:streamed] 
+                )
+
+    sort!(rankingsDf,[:modified_margin,:margin], rev = true)
+
+    rankingsDf.rank = collect(1:size(rankingsDf,1))
+
+    return rankingsDf
+end
 
 """
 Takes a lookup table of distance matrix, and 
@@ -390,280 +440,280 @@ end
 # prevField.fieldNumber[findfirst(x->x== "Mount",prevField.team)]
 
 
-"""
-This function is the meat of the swiss draww. It takes a list of previous games, and the bye indicator, 
-It calculates the rankings, and looks at prior games.
-it calculates who is next best to play each other in the next round, based on the score of previous games.
+# """
+# This function is the meat of the swiss draww. It takes a list of previous games, and the bye indicator, 
+# It calculates the rankings, and looks at prior games.
+# it calculates who is next best to play each other in the next round, based on the score of previous games.
 
-It returns a nextRound objects that are games to be played
+# It returns a nextRound objects that are games to be played
 
-it takes into consideration prior games, so that teams do no play each other more than once, 
-and prior byes, so that a single team won't have more than one bye. 
+# it takes into consideration prior games, so that teams do no play each other more than once, 
+# and prior byes, so that a single team won't have more than one bye. 
 
-If there are an odd number of teams, the bye position decides if it goes to the first rank,
-bottom ranked, or middle ranked team, first taking into consideration the the points above.
-"""
-function CreateNextRound(prevGames::Vector{Game},_fieldLayout::fieldLayout ,bye::Symbol=:middle)
+# If there are an odd number of teams, the bye position decides if it goes to the first rank,
+# bottom ranked, or middle ranked team, first taking into consideration the the points above.
+# """
+# function CreateNextRound(prevGames::Vector{Game},_fieldLayout::fieldLayout ,bye::Symbol=:middle)
     
-    # prevGames = firstRound
-    # fieldDataFrame = deepcopy(_fieldDF)
-    # _fieldLayout.fieldDF
-    fdf = deepcopy(_fieldLayout.fieldDF)
-    bye = :middle
-    df = rankings(prevGames)
+#     # prevGames = firstRound
+#     # fieldDataFrame = deepcopy(_fieldDF)
+#     # _fieldLayout.fieldDF
+#     fdf = deepcopy(_fieldLayout.fieldDF)
+#     bye = :middle
+#     df = allRankings(prevGames)
 
-    # get previous locations
-    prevField = DataFrame(team=String[],fieldNumber=Int[])
+#     # get previous locations
+#     prevField = DataFrame(team=String[],fieldNumber=Int[])
 
-    for i in prevGames
+#     for i in prevGames
 
-        push!(prevField,(i.teamA,i.fieldNumber))
-        push!(prevField,(i.teamB,i.fieldNumber))
+#         push!(prevField,(i.teamA,i.fieldNumber))
+#         push!(prevField,(i.teamB,i.fieldNumber))
 
-    end
+#     end
 
-    prevField
+#     prevField
 
-    g = Game[]
+#     g = Game[]
 
-    # # ok, so now we need to find the best combination of pairs where they haven't played prior.
-    sort!(df,:teamA,rev=true)
+#     # # ok, so now we need to find the best combination of pairs where they haven't played prior.
+#     sort!(df,:teamA,rev=true)
 
 
 
-    # We also need a distance matrix between fields
-    sort!(fdf,:number)
-    # fieldN = size(fdf,1)
+#     # We also need a distance matrix between fields
+#     sort!(fdf,:number)
+#     # fieldN = size(fdf,1)
 
 
 
-    # This is just linear algebra?
-    # lets make some cost matricies
+#     # This is just linear algebra?
+#     # lets make some cost matricies
 
-    # so in order for these to all work well together, you need to make them different orders of magnitude
-    # for example, we don't want team location to effect the draw, so we make it 10x smaller than the rank
+#     # so in order for these to all work well together, you need to make them different orders of magnitude
+#     # for example, we don't want team location to effect the draw, so we make it 10x smaller than the rank
 
-    teamSz = size(df,1)
-    fieldSz = size(fdf,1)
+#     teamSz = size(df,1)
+#     fieldSz = size(fdf,1)
 
-    costMatchup = zeros(teamSz,teamSz,fieldSz) # mag ~10^1
-    costSelfMatchup = zeros(teamSz,teamSz,fieldSz) # mag ~10^6
-    costAnotherBye = zeros(teamSz,teamSz,fieldSz) # mag ~10^3
-    costSelectBye = zeros(teamSz,teamSz,fieldSz) # mag ~10^1
-    costStream = zeros(teamSz,teamSz,fieldSz) # mag ~5^1
-    costPrevField = zeros(teamSz,teamSz,fieldSz) # mag ~1^1
-    # costM = zeros(sz,sz)
+#     costMatchup = zeros(teamSz,teamSz,fieldSz) # mag ~10^1
+#     costSelfMatchup = zeros(teamSz,teamSz,fieldSz) # mag ~10^6
+#     costAnotherBye = zeros(teamSz,teamSz,fieldSz) # mag ~10^3
+#     costSelectBye = zeros(teamSz,teamSz,fieldSz) # mag ~10^1
+#     costStream = zeros(teamSz,teamSz,fieldSz) # mag ~5^1
+#     costPrevField = zeros(teamSz,teamSz,fieldSz) # mag ~1^1
+#     # costM = zeros(sz,sz)
 
-    for i in 1:teamSz
-        for j in 1:teamSz
-            for k in 1:fieldSz
+#     for i in 1:teamSz
+#         for j in 1:teamSz
+#             for k in 1:fieldSz
 
-                # This makes large matchups more costly
-                costMatchup[i,j,k] = max(abs.(df.rank[i] - df.rank[j]))*10
+#                 # This makes large matchups more costly
+#                 costMatchup[i,j,k] = max(abs.(df.rank[i] - df.rank[j]))*10
 
 
-                # # This stops teams from playing themself
-                if i == j 
-                    costSelfMatchup[i,j,k] = 1000000
-                end
+#                 # # This stops teams from playing themself
+#                 if i == j 
+#                     costSelfMatchup[i,j,k] = 1000000
+#                 end
 
 
-                # This prevents teams that have had a bye from having another one
-                if ((df.teamA[i]=="BYE" && df.byeA[j]==1 ) || (df.teamA[j]=="BYE" && df.byeA[i]==1 ))
-                    costAnotherBye[i,j,k] = 1000
-                end
+#                 # This prevents teams that have had a bye from having another one
+#                 if ((df.teamA[i]=="BYE" && df.byeA[j]==1 ) || (df.teamA[j]=="BYE" && df.byeA[i]==1 ))
+#                     costAnotherBye[i,j,k] = 1000
+#                 end
 
 
-                # If none of the teams have had a streamed game, make it likely that they get one,
-                # else make team pairings with a streamed game unlikely to not get it. 
+#                 # If none of the teams have had a streamed game, make it likely that they get one,
+#                 # else make team pairings with a streamed game unlikely to not get it. 
 
-            if fdf.stream[k] == true 
-                    if df.streamed[i] + df.streamed[j] == 0
-                        # incentivise lower teams to get streams 
+#             if fdf.stream[k] == true 
+#                     if df.streamed[i] + df.streamed[j] == 0
+#                         # incentivise lower teams to get streams 
 
-                        # this should be thought over later, as its a bit poos
-                        costStream[i,j,k] = ((teamSz - max(df.rank[i],df.rank[j])) / teamSz) -1
-                    else 
-                        costStream[i,j,k] = 10
-                    end
+#                         # this should be thought over later, as its a bit poos
+#                         costStream[i,j,k] = ((teamSz - max(df.rank[i],df.rank[j])) / teamSz) -1
+#                     else 
+#                         costStream[i,j,k] = 10
+#                     end
 
-                # then if its not a streamed field, we don't mind too much, but would like 
-                # to play teams that have had at least one stream if we can, so we don't 
-                # kill potential pairings for the next round
-                elseif fdf.stream[k] == false
-                    if df.streamed[i] + df.streamed[j] == 1
-                        costStream[i,j,k] = 0
-                    else
-                        costStream[i,j,k] = 1
-                    end
-                end
+#                 # then if its not a streamed field, we don't mind too much, but would like 
+#                 # to play teams that have had at least one stream if we can, so we don't 
+#                 # kill potential pairings for the next round
+#                 elseif fdf.stream[k] == false
+#                     if df.streamed[i] + df.streamed[j] == 1
+#                         costStream[i,j,k] = 0
+#                     else
+#                         costStream[i,j,k] = 1
+#                     end
+#                 end
 
 
 
-                # this minimises the distance teams have to walk.
-                # so for each (team x team x field combo), we look at the prev two fields, 
-                # and assign a cost to it based on the mean distance the teams have to move
+#                 # this minimises the distance teams have to walk.
+#                 # so for each (team x team x field combo), we look at the prev two fields, 
+#                 # and assign a cost to it based on the mean distance the teams have to move
 
-                costPrevField[i,j,k] = prevDistance(
-                    prevField.fieldNumber[findfirst(x->x== df.teamA[i] ,prevField.team)],
-                    prevField.fieldNumber[findfirst(x->x== df.teamA[j] ,prevField.team)],
-                    _fieldLayout.distanceMatrix) / _fieldLayout.distanceMax
+#                 costPrevField[i,j,k] = prevDistance(
+#                     prevField.fieldNumber[findfirst(x->x== df.teamA[i] ,prevField.team)],
+#                     prevField.fieldNumber[findfirst(x->x== df.teamA[j] ,prevField.team)],
+#                     _fieldLayout.distanceMatrix) / _fieldLayout.distanceMax
 
 
-                ## and add a cost for where the bye might go based on rank
-                ## the following code explains the rankings
+#                 ## and add a cost for where the bye might go based on rank
+#                 ## the following code explains the rankings
 
-                # n = collect(1:14)
-                # szN = size(n,1)
-                # # top.  want it to get progressively larger from 1
-                # # we can literally just use the rank
-                # n
-                # # for last, we want to start large and get smaller 
-                # sz +1 .- n
-                # # for middle, we want to start small and get larger
-                # abs.(szN/2 .- n)
+#                 # n = collect(1:14)
+#                 # szN = size(n,1)
+#                 # # top.  want it to get progressively larger from 1
+#                 # # we can literally just use the rank
+#                 # n
+#                 # # for last, we want to start large and get smaller 
+#                 # sz +1 .- n
+#                 # # for middle, we want to start small and get larger
+#                 # abs.(szN/2 .- n)
 
-                if bye == :middle 
-                    if df.teamA[i]=="BYE" 
-                        costSelectBye[i,j,k] = abs.(size(df.rank,1)/2 .- df.rank[j])*10
+#                 if bye == :middle 
+#                     if df.teamA[i]=="BYE" 
+#                         costSelectBye[i,j,k] = abs.(size(df.rank,1)/2 .- df.rank[j])*10
 
-                    elseif df.teamA[j]=="BYE" 
-                        costSelectBye[i,j,k] = abs.(size(df.rank,1)/2 .- df.rank[i])*10
-                    end
+#                     elseif df.teamA[j]=="BYE" 
+#                         costSelectBye[i,j,k] = abs.(size(df.rank,1)/2 .- df.rank[i])*10
+#                     end
 
-                elseif bye == :first 
-                    if df.teamA[i]=="BYE" 
-                        costSelectBye[i,j,k] = df.rank[j]*10
+#                 elseif bye == :first 
+#                     if df.teamA[i]=="BYE" 
+#                         costSelectBye[i,j,k] = df.rank[j]*10
 
-                    elseif df.teamA[j]=="BYE" 
-                        costSelectBye[i,j,k] = df.rank[i]*10
-                    end
+#                     elseif df.teamA[j]=="BYE" 
+#                         costSelectBye[i,j,k] = df.rank[i]*10
+#                     end
 
-                elseif bye == :last 
-                    if df.teamA[i]=="BYE" 
-                        costSelectBye[i,j,k] = df.rank[j]*10
+#                 elseif bye == :last 
+#                     if df.teamA[i]=="BYE" 
+#                         costSelectBye[i,j,k] = df.rank[j]*10
 
-                    elseif df.teamA[j]=="BYE" 
-                        costSelectBye[i,j,k] =  size(df.rank,1) +1 .- df.rank[i]*10
-                    end
-                end
-            end
-        end
-    end
+#                     elseif df.teamA[j]=="BYE" 
+#                         costSelectBye[i,j,k] =  size(df.rank,1) +1 .- df.rank[i]*10
+#                     end
+#                 end
+#             end
+#         end
+#     end
 
-    costStream
-    # costSelectBye
-    costPrevField
+#     costStream
+#     # costSelectBye
+#     costPrevField
 
 
 
 
-    # and now find the matrix of previous plays 
-    prevGameDf = DataFrame(teamA = String[],teamB = String[])
-    for i in prevGames
+#     # and now find the matrix of previous plays 
+#     prevGameDf = DataFrame(teamA = String[],teamB = String[])
+#     for i in prevGames
 
-        push!(prevGameDf,(i.teamA,i.teamB))
-        push!(prevGameDf,(i.teamB,i.teamA))
+#         push!(prevGameDf,(i.teamA,i.teamB))
+#         push!(prevGameDf,(i.teamB,i.teamA))
 
-    end
+#     end
 
 
-    sort!(prevGameDf,:teamA)
-    prevGameDf.exclude .= 1000
+#     sort!(prevGameDf,:teamA)
+#     prevGameDf.exclude .= 1000
 
-    # ok so we remove the and games that are not being played
-    score_df = unstack(prevGameDf, :teamA, :teamB, :exclude,fill = 0)
-    sort!(filter!(x->(x.teamA ∈ df.teamA ) , score_df),:teamA,rev=true)
+#     # ok so we remove the and games that are not being played
+#     score_df = unstack(prevGameDf, :teamA, :teamB, :exclude,fill = 0)
+#     sort!(filter!(x->(x.teamA ∈ df.teamA ) , score_df),:teamA,rev=true)
 
-    # this ensures that the matrix is ordered alphabetically
-    prevGamesM = Matrix(select(score_df,score_df.teamA))
+#     # this ensures that the matrix is ordered alphabetically
+#     prevGamesM = Matrix(select(score_df,score_df.teamA))
 
-    # make it include the field dimension so that we can add it to the rest
-    allPrevGamesM = extend_to_n(prevGamesM, fieldSz)
+#     # make it include the field dimension so that we can add it to the rest
+#     allPrevGamesM = extend_to_n(prevGamesM, fieldSz)
 
 
 
-    allM = 
-        costMatchup .+ 
-        costSelfMatchup .+ 
-        costSelfMatchup .+ 
-        costAnotherBye .+ 
-        costStream .+ 
-        costPrevField .+ 
-        costSelectBye .+ 
-        prevGamesM
+#     allM = 
+#         costMatchup .+ 
+#         costSelfMatchup .+ 
+#         costSelfMatchup .+ 
+#         costAnotherBye .+ 
+#         costStream .+ 
+#         costPrevField .+ 
+#         costSelectBye .+ 
+#         prevGamesM
 
 
-        sum(allM[:,:,2])
+#         sum(allM[:,:,2])
 
-        # allM
-    # and now we can pump this into a linear algebra solver to find the best combo
+#         # allM
+#     # and now we can pump this into a linear algebra solver to find the best combo
 
-    # model = Model(COSMO.Optimizer)
-    # model = Model(Cbc.Optimizer)
+#     # model = Model(COSMO.Optimizer)
+#     # model = Model(Cbc.Optimizer)
 
 
-    model = Model(GLPK.Optimizer)
+#     model = Model(GLPK.Optimizer)
 
-    @variable(model,possibleGames[1:teamSz,1:teamSz,1:fieldSz],Bin)
-    # @variable(model, x[1:m, 1:n], Bin);
+#     @variable(model,possibleGames[1:teamSz,1:teamSz,1:fieldSz],Bin)
+#     # @variable(model, x[1:m, 1:n], Bin);
 
 
-    # These constraints ensure that teams only play once. 
-    @constraint(model, teamA[i = 1:teamSz], sum(possibleGames[i, j, k] for j in 1:teamSz, k in 1:fieldSz) == 1)
-    @constraint(model, teamB[j = 1:teamSz], sum(possibleGames[i, j, k] for i in 1:teamSz, k in 1:fieldSz) == 1)
+#     # These constraints ensure that teams only play once. 
+#     @constraint(model, teamA[i = 1:teamSz], sum(possibleGames[i, j, k] for j in 1:teamSz, k in 1:fieldSz) == 1)
+#     @constraint(model, teamB[j = 1:teamSz], sum(possibleGames[i, j, k] for i in 1:teamSz, k in 1:fieldSz) == 1)
 
-    # this ensures that both teams play each other, else it might try A => B and then B => C
-    @constraint(model, parity[i = 1:teamSz, j = 1:teamSz, k = 1:fieldSz], possibleGames[i, j, k] == possibleGames[j, i, k])
+#     # this ensures that both teams play each other, else it might try A => B and then B => C
+#     @constraint(model, parity[i = 1:teamSz, j = 1:teamSz, k = 1:fieldSz], possibleGames[i, j, k] == possibleGames[j, i, k])
 
-    # this makes sure that fields are not played on by more than 2 teams 
-    @constraint(model, fields[k = 1:fieldSz], sum(possibleGames[i, j, k] for i in 1:teamSz, j in 1:teamSz) <= 2)
+#     # this makes sure that fields are not played on by more than 2 teams 
+#     @constraint(model, fields[k = 1:fieldSz], sum(possibleGames[i, j, k] for i in 1:teamSz, j in 1:teamSz) <= 2)
 
 
-    # we want the minimum difference in matchups
-    @objective(model,Min,sum(allM .* possibleGames ));
-    model
+#     # we want the minimum difference in matchups
+#     @objective(model,Min,sum(allM .* possibleGames ));
+#     model
 
-    # set_attribute(model, "presolve", GLPK.GLP_OFF)
+#     # set_attribute(model, "presolve", GLPK.GLP_OFF)
 
-    optimize!(model)
+#     optimize!(model)
 
-    summary = solution_summary(model,verbose=true)
+#     summary = solution_summary(model,verbose=true)
 
-    @show summary.:raw_status
-    @show summary.:objective_value
-    # Create dataframe to get values back out
+#     @show summary.:raw_status
+#     @show summary.:objective_value
+#     # Create dataframe to get values back out
 
-    # find all the positions where 1 
-    pos = findall(x->x==1,value.(possibleGames))
+#     # find all the positions where 1 
+#     pos = findall(x->x==1,value.(possibleGames))
 
-    schedule = DataFrame(teamA = String[], teamB = String[], field = Int[], rankA = Int[], rankB = Int[], stream = Bool[])
+#     schedule = DataFrame(teamA = String[], teamB = String[], field = Int[], rankA = Int[], rankB = Int[], stream = Bool[])
 
-    for i in pos
-        push!(schedule,(df.teamA[i[1]], df.teamA[i[2]], fdf.number[i[3]], df.rank[i[1]], df.rank[i[2]] , fdf.stream[i[3]] ))
-    end
-    schedule
+#     for i in pos
+#         push!(schedule,(df.teamA[i[1]], df.teamA[i[2]], fdf.number[i[3]], df.rank[i[1]], df.rank[i[2]] , fdf.stream[i[3]] ))
+#     end
+#     schedule
 
 
-    if size(filter(x->x.teamA == x.teamB,schedule),1) > 0
-        @warn "One or more Teams have been paired with themself"
-    end
+#     if size(filter(x->x.teamA == x.teamB,schedule),1) > 0
+#         @warn "One or more Teams have been paired with themself"
+#     end
 
-    _teams = String[] 
-    g 
-    schedule
-    for i in eachrow(schedule)
+#     _teams = String[] 
+#     g 
+#     schedule
+#     for i in eachrow(schedule)
 
-        if i.teamA ∉ _teams
-            push!(g,Game(i.teamA,i.teamB,i.field,missing,missing,i.stream))
-            push!(_teams,i.teamA)
-            push!(_teams,i.teamB)
-        end
-    end
+#         if i.teamA ∉ _teams
+#             push!(g,Game(i.teamA,i.teamB,i.field,missing,missing,i.stream))
+#             push!(_teams,i.teamA)
+#             push!(_teams,i.teamB)
+#         end
+#     end
 
-    NextRound = nextRound(g) # create a nextround object from the list of games.
-    return NextRound;
-end;
+#     NextRound = nextRound(g) # create a nextround object from the list of games.
+#     return NextRound;
+# end;
 
 
 """
@@ -688,6 +738,15 @@ function switchVals!(val,possibleVals::AbstractArray)
     end
     return val
 end
+
+function ifZeroThenOne(x::Number)
+    if x == 0
+        return 1
+    else
+        return x
+    end
+end
+
 
 # ok, so now we want mutation functions. ie to update/add outcome of a game. 
 """
@@ -762,9 +821,25 @@ end
 """
 Simple way to update a game from in  the current round based off of the index
 """
-function updateScore!(_SwissDraw, gameIndex::Int, _teamAScore::Int64, _teamBScore::Int64)
+function updateScore!(_SwissDraw, gameIndex::Int, _teamAScore::Int64, _teamBScore::Int64,_round=missing)
 
-    game2Update = _SwissDraw.currentRound.Games[gameIndex]
+    Round2Change = []
+
+    if ismissing(_round)
+        Round2Change = _SwissDraw.currentRound
+    else
+        Round2Change =  filter(x->x.roundNumber == _round,_SwissDraw.previousRound )[1]
+
+        if size(Round2Change.Games,1) == 0 
+            println("Round $round not found")
+            return
+        end
+
+        println("Modifying Round $round")
+    end
+
+    # game2Update = _SwissDraw.currentRound.Games[gameIndex]
+    game2Update = Round2Change.Games[gameIndex]
     
     oldGame = deepcopy(game2Update)
 
@@ -795,7 +870,8 @@ function SwitchTeams!(_SwissDraw, _teamA::String, _teamB::String,_round=missing)
     if ismissing(_round)
         Round2Change = _SwissDraw.currentRound.Games
     else
-        Round2Change =  filter(x->x.roundNumber == _round,_SwissDraw.previousRound )[1].Games
+        # Round2Change =  filter(x->x.roundNumber == _round,_SwissDraw.previousRound )[1].Games
+        Round2Change = _SwissDraw.previousRound[_round].Games
 
         if size(Round2Change,1) == 0 
             println("Round $round not found")
@@ -883,7 +959,7 @@ function switchFields!(_SwissDraw, _field1::Int, _field2::Int,_round=missing)
             return
         end
 
-        println("Modifying Round $round")
+        println("Modifying Round $_round")
     end
 
     
@@ -928,6 +1004,8 @@ bottom ranked, or middle ranked team, first taking into consideration the the po
 # function CreateNextRound(prevGames::Vector{Game},_fieldLayout::fieldLayout ,bye::Symbol=:middle)
 function CreateNextRound!(_SwissDraw)
     
+    # dump(_SwissDraw)
+
     _currentRound = _SwissDraw.currentRound
     _fieldLayout = _SwissDraw.layout
     bye = _SwissDraw.bye
@@ -936,7 +1014,287 @@ function CreateNextRound!(_SwissDraw)
     # _fieldLayout.fieldDF
     fdf = deepcopy(_fieldLayout.fieldDF)
     bye = :middle
-    df = rankings(_currentRound)
+    df = allRankings(_SwissDraw)
+
+    show(df)
+    # get previous locations
+    prevField = DataFrame(team=String[],fieldNumber=Int[])
+
+    for i in _currentRound.Games
+
+        push!(prevField,(i.teamA,i.fieldNumber))
+        push!(prevField,(i.teamB,i.fieldNumber))
+
+    end
+
+    prevField
+
+    g = Game[]
+
+    # # ok, so now we need to find the best combination of pairs where they haven't played prior.
+    sort!(df,:teamA,rev=true)
+
+
+
+    # We also need a distance matrix between fields
+    sort!(fdf,:number)
+    # fieldN = size(fdf,1)
+
+
+
+    # This is just linear algebra?
+    # lets make some cost matricies
+
+    # so in order for these to all work well together, you need to make them different orders of magnitude
+    # for example, we don't want team location to effect the draw, so we make it 10x smaller than the rank
+
+    teamSz = size(df,1)
+    fieldSz = size(fdf,1)
+
+    costMatchup = zeros(teamSz,teamSz,fieldSz) # mag ~10^1
+    costSelfMatchup = zeros(teamSz,teamSz,fieldSz) # mag ~10^6
+    costAnotherBye = zeros(teamSz,teamSz,fieldSz) # mag ~10^3
+    costSelectBye = zeros(teamSz,teamSz,fieldSz) # mag ~10^1
+    costStream = zeros(teamSz,teamSz,fieldSz) # mag ~5^1
+    costPrevField = zeros(teamSz,teamSz,fieldSz) # mag ~1^1
+    # costM = zeros(sz,sz)
+
+    for i in 1:teamSz
+        for j in 1:teamSz
+            for k in 1:fieldSz
+
+                # This makes large matchups more costly
+                costMatchup[i,j,k] = max(abs.(df.rank[i] - df.rank[j]))*10
+
+
+                # # This stops teams from playing themself
+                if i == j 
+                    costSelfMatchup[i,j,k] = 1000000
+                end
+
+
+                # This prevents teams that have had a bye from having another one
+                if ((df.teamA[i]=="BYE" && df.byeA[j]==1 ) || (df.teamA[j]=="BYE" && df.byeA[i]==1 ))
+                    costAnotherBye[i,j,k] = 1000
+                end
+
+
+                # If none of the teams have had a streamed game, make it likely that they get one,
+                # else make team pairings with a streamed game unlikely to not get it. 
+
+            if fdf.stream[k] == true 
+                    if df.streamed[i] + df.streamed[j] == 0
+                        # incentivise lower teams to get streams 
+
+                        # this should be thought over later, as its a bit poos
+                        costStream[i,j,k] = ((teamSz - max(df.rank[i],df.rank[j])) / teamSz) -1
+                    else 
+                        costStream[i,j,k] = 10
+                    end
+
+                # then if its not a streamed field, we don't mind too much, but would like 
+                # to play teams that have had at least one stream if we can, so we don't 
+                # kill potential pairings for the next round
+                elseif fdf.stream[k] == false
+                    if df.streamed[i] + df.streamed[j] == 1
+                        costStream[i,j,k] = 0
+                    else
+                        costStream[i,j,k] = 1
+                    end
+                end
+
+
+
+                # this minimises the distance teams have to walk.
+                # so for each (team x team x field combo), we look at the prev two fields, 
+                # and assign a cost to it based on the mean distance the teams have to move
+
+                costPrevField[i,j,k] = prevDistance(
+                    ifZeroThenOne(prevField.fieldNumber[findfirst(x->x== df.teamA[i] ,prevField.team)]),
+                    ifZeroThenOne(prevField.fieldNumber[findfirst(x->x== df.teamA[j] ,prevField.team)]),
+                    _fieldLayout.distanceMatrix) / _fieldLayout.distanceMax
+
+
+                ## and add a cost for where the bye might go based on rank
+                ## the following code explains the rankings
+
+                # n = collect(1:14)
+                # szN = size(n,1)
+                # # top.  want it to get progressively larger from 1
+                # # we can literally just use the rank
+                # n
+                # # for last, we want to start large and get smaller 
+                # sz +1 .- n
+                # # for middle, we want to start small and get larger
+                # abs.(szN/2 .- n)
+
+                if bye == :middle 
+                    if df.teamA[i]=="BYE" 
+                        costSelectBye[i,j,k] = abs.(size(df.rank,1)/2 .- df.rank[j])*10
+
+                    elseif df.teamA[j]=="BYE" 
+                        costSelectBye[i,j,k] = abs.(size(df.rank,1)/2 .- df.rank[i])*10
+                    end
+
+                elseif bye == :first 
+                    if df.teamA[i]=="BYE" 
+                        costSelectBye[i,j,k] = df.rank[j]*10
+
+                    elseif df.teamA[j]=="BYE" 
+                        costSelectBye[i,j,k] = df.rank[i]*10
+                    end
+
+                elseif bye == :last 
+                    if df.teamA[i]=="BYE" 
+                        costSelectBye[i,j,k] = df.rank[j]*10
+
+                    elseif df.teamA[j]=="BYE" 
+                        costSelectBye[i,j,k] =  size(df.rank,1) +1 .- df.rank[i]*10
+                    end
+                end
+            end
+        end
+    end
+
+    costStream
+    # costSelectBye
+    costPrevField
+
+
+
+
+    # and now find the matrix of previous plays 
+    prevGameDf = DataFrame(teamA = String[],teamB = String[])
+    for i in _currentRound.Games
+
+        push!(prevGameDf,(i.teamA,i.teamB))
+        push!(prevGameDf,(i.teamB,i.teamA))
+
+    end
+
+
+    sort!(prevGameDf,:teamA)
+    prevGameDf.exclude .= 1000
+
+    # ok so we remove the and games that are not being played
+    score_df = unstack(prevGameDf, :teamA, :teamB, :exclude,fill = 0)
+    sort!(filter!(x->(x.teamA ∈ df.teamA ) , score_df),:teamA,rev=true)
+
+    # this ensures that the matrix is ordered alphabetically
+    prevGamesM = Matrix(select(score_df,score_df.teamA))
+
+    # make it include the field dimension so that we can add it to the rest
+    allPrevGamesM = extend_to_n(prevGamesM, fieldSz)
+
+
+
+    allM = 
+        costMatchup .+ 
+        costSelfMatchup .+ 
+        costSelfMatchup .+ 
+        costAnotherBye .+ 
+        costStream .+ 
+        costPrevField .+ 
+        costSelectBye .+ 
+        prevGamesM
+
+        # allM
+    # and now we can pump this into a linear algebra solver to find the best combo
+
+    # model = Model(COSMO.Optimizer)
+    # model = Model(Cbc.Optimizer)
+
+
+    model = Model(GLPK.Optimizer)
+
+    @variable(model,possibleGames[1:teamSz,1:teamSz,1:fieldSz],Bin)
+    # @variable(model, x[1:m, 1:n], Bin);
+
+
+    # These constraints ensure that teams only play once. 
+    @constraint(model, teamA[i = 1:teamSz], sum(possibleGames[i, j, k] for j in 1:teamSz, k in 1:fieldSz) == 1)
+    @constraint(model, teamB[j = 1:teamSz], sum(possibleGames[i, j, k] for i in 1:teamSz, k in 1:fieldSz) == 1)
+
+    # this ensures that both teams play each other, else it might try A => B and then B => C
+    @constraint(model, parity[i = 1:teamSz, j = 1:teamSz, k = 1:fieldSz], possibleGames[i, j, k] == possibleGames[j, i, k])
+
+    # this makes sure that fields are not played on by more than 2 teams 
+    @constraint(model, fields[k = 1:fieldSz], sum(possibleGames[i, j, k] for i in 1:teamSz, j in 1:teamSz) <= 2)
+
+
+    # we want the minimum difference in matchups
+    @objective(model,Min,sum(allM .* possibleGames ));
+    model
+
+    # set_attribute(model, "presolve", GLPK.GLP_OFF)
+
+    optimize!(model)
+
+    summary = solution_summary(model,verbose=true)
+
+    @show summary.:raw_status
+    @show summary.:objective_value
+    # Create dataframe to get values back out
+
+    # find all the positions where 1 
+    pos = findall(x->x==1,value.(possibleGames))
+
+    schedule = DataFrame(teamA = String[], teamB = String[], field = Int[], rankA = Int[], rankB = Int[], stream = Bool[])
+
+    for i in pos
+        push!(schedule,(df.teamA[i[1]], df.teamA[i[2]], fdf.number[i[3]], df.rank[i[1]], df.rank[i[2]] , fdf.stream[i[3]] ))
+    end
+    schedule
+
+
+    if size(filter(x->x.teamA == x.teamB,schedule),1) > 0
+        @warn "One or more Teams have been paired with themself"
+    end
+
+    _teams = String[] 
+    g 
+    schedule
+    for i in eachrow(schedule)
+
+        if i.teamA ∉ _teams
+            push!(g,Game(i.teamA,i.teamB,i.field,missing,missing,i.stream))
+            push!(_teams,i.teamA)
+            push!(_teams,i.teamB)
+        end
+    end
+
+    # also need to find the current round number.
+
+    
+    # And now we overwrite the swiss draw bits and bobs with the new information.
+    # NextRound = nextRound(g) # create a nextround object from the list of games.
+    NextRound = RoundOfGames(g,_SwissDraw.currentRound.roundNumber+1)
+
+    push!(_SwissDraw.previousRound,_SwissDraw.currentRound)
+    _SwissDraw.currentRound = NextRound
+    # return NextRound;
+
+end
+
+
+
+
+
+"""
+    This function is the meat of the swiss draw. Similar to createnextRound(), but it takes the 
+    previously rounds only into account. 
+"""
+function refreshNextRound!(_SwissDraw)
+    
+    _currentRound = _SwissDraw.currentRound
+    _fieldLayout = _SwissDraw.layout
+    bye = _SwissDraw.bye
+    # prevGames = firstRound
+    # fieldDataFrame = deepcopy(_fieldDF)
+    # _fieldLayout.fieldDF
+    fdf = deepcopy(_fieldLayout.fieldDF)
+    bye = :middle
+    df = prevRoundsRankings(_SwissDraw)
 
     # get previous locations
     prevField = DataFrame(team=String[],fieldNumber=Int[])
@@ -1031,8 +1389,8 @@ function CreateNextRound!(_SwissDraw)
                 # and assign a cost to it based on the mean distance the teams have to move
 
                 costPrevField[i,j,k] = prevDistance(
-                    prevField.fieldNumber[findfirst(x->x== df.teamA[i] ,prevField.team)],
-                    prevField.fieldNumber[findfirst(x->x== df.teamA[j] ,prevField.team)],
+                    ifZeroThenOne(prevField.fieldNumber[findfirst(x->x== df.teamA[i] ,prevField.team)]),
+                    ifZeroThenOne(prevField.fieldNumber[findfirst(x->x== df.teamA[j] ,prevField.team)]),
                     _fieldLayout.distanceMatrix) / _fieldLayout.distanceMax
 
 
@@ -1119,9 +1477,6 @@ function CreateNextRound!(_SwissDraw)
         costSelectBye .+ 
         prevGamesM
 
-
-        sum(allM[:,:,2])
-
         # allM
     # and now we can pump this into a linear algebra solver to find the best combo
 
@@ -1199,7 +1554,6 @@ function CreateNextRound!(_SwissDraw)
     # return NextRound;
 
 end
-
 
 
 
