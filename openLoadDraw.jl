@@ -72,7 +72,7 @@ main() do app::Application
 
     NewDrawClicked = Action("NewDrawClicked.page", app) do x::Action
 
-        set_title!(mainWindow, "Ultimate Swiss Draw: Current Round")
+        set_title!(mainWindow, "Ultimate Swiss Draw: Create Draw") 
 
         # ok, so we want to refresh the page, with new bits and bobs. 
 
@@ -147,7 +147,41 @@ main() do app::Application
         push_back!(selectButtons,addFields)
 
         push_front!(topWindowOpenLoadDraw,selectButtons)
+
+
+        info = Label("
+    Columns needed:
+
+        Team spreadsheet:
+            'team' - The name and identifier of the team. 
+                Note and odd number of teams will result in 
+                a 'BYE' team being created.
+            'rank' - The inital seeding. if you have no 
+                    idea of the seeding random is fine
+
+        Field spreadsheet:
+            'number' - The number and identifier of the field
+            'x' - the x position of the field
+            'y' - the y position of the field
+            'stream' - if the field will be streamed or not. 
+                    This is intended for as many teams to 
+                    get a streamed game. 
+        ")
+
+
         push_back!(topWindowOpenLoadDraw,SubmitNewDraw)
+        push_back!(topWindowOpenLoadDraw,info)
+
+        println(pwd())
+
+        image_display2 = ImageDisplay()
+        create_from_file!(image_display2, "\\field_example.png")
+
+        image_display = ImageDisplay(string(pwd(),"\\field_example.png"))
+
+        push_back!(topWindowOpenLoadDraw,image_display)
+        push_back!(topWindowOpenLoadDraw,image_display2)
+
 
 
         remove_child!(mainWindow)
@@ -172,6 +206,8 @@ main() do app::Application
 
 
     refreshCurrentDraw = Action("refreshCurrentDraw.page", app) do x::Action
+
+        set_title!(mainWindow, "Ultimate Swiss Draw: Current Draw") 
 
 
         # Add the current round info
@@ -446,7 +482,15 @@ main() do app::Application
 
         # and some formatting
 
-        center_box = hbox(Label("Current Round")) 
+        center_box = hbox(Label("
+        Current Round
+
+        Update the scores, 
+        Switch teams,
+        move fields.
+
+        In order to ensure teams don't get forgotten, you can only switch a team with another team.
+        ")) 
         topWindow = vbox(center_box,column_view)
         push_back!(topWindow,updateScore)
         push_back!(topWindow,SwitchTeams)
@@ -463,6 +507,14 @@ main() do app::Application
             push_back!(primaryButtons,RunSwissDrawB)
 
         push_back!(topWindow,primaryButtons)
+
+        L2 = Label("
+        To share the draw, you can download it as a csv. 
+
+        Once the score are filled out, you can submit the scores and calculate the next round. 
+        Note that missing scores will be assumed as 0 
+        ")
+        push_back!(topWindow,L2)
 
         set_margin!(center_box, 75)
 
@@ -885,6 +937,8 @@ main() do app::Application
     end
 
     # activate!(SwissDrawCreated)
+
+
 
 
     push_front!(topWindowOpenLoadDraw,NewDraw)
