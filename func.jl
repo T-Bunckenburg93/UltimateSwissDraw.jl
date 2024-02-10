@@ -179,6 +179,7 @@ function CreateFirstRound(_df::DataFrame,_fieldLayout::fieldLayout,bye::Symbol=:
     # function CreateFirstRound(_df::DataFrame,fieldDataFrame::DataFrame,bye::Symbol=:middle)
 
     df = deepcopy(_df)
+    sort!(df,:rank)
     field_df = deepcopy(select(_fieldLayout.fieldDF,[:number,:stream]))
 
 
