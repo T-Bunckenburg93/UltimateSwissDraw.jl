@@ -1,4 +1,4 @@
-using DataFrames, JuMP, Dates, JLD2, GLPK
+using DataFrames, JuMP, Dates, JLD2, GLPK, StatsBase, LinearAlgebra
 
 ### Customer structures that we use and can operate on
 
@@ -1060,6 +1060,8 @@ end
     previously rounds only into account. 
 """
 function refreshNextRound!(_SwissDraw)
+
+    println("Begining Preprocessing")
     
     _currentRound = _SwissDraw.currentRound
     _fieldLayout = _SwissDraw.layout
@@ -1258,6 +1260,12 @@ function refreshNextRound!(_SwissDraw)
     # model = Model(COSMO.Optimizer)
     # model = Model(Cbc.Optimizer)
 
+
+
+    println("Finished Preprocessing")
+    println("...")
+    println("...")
+    println("Running Optimiser")
 
     model = Model(GLPK.Optimizer)
 
