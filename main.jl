@@ -212,6 +212,9 @@ main() do app::Application
 
         # Add the current round info
         column_view = ColumnView()
+        viewport_rcp = Viewport()
+        set_size_request!(viewport_rcp, Vector2f(600,800)) 
+        set_child!(viewport_rcp, column_view)
 
         field = push_back_column!(column_view, "Field #")
 
@@ -239,7 +242,11 @@ main() do app::Application
         dropdownMatchup = DropDown()
 
         # If not selected it rests on the first value
-        matchID = 1
+        # matchID = 1
+        # find the first missing value of matchID
+        # in theory so that the dropdown defaults to the next unentered one
+        matchID = findfirst(x->ismissing(x.teamAScore) && ismissing(x.teamBScore) ,_swissDrawObject.currentRound.Games)
+        println(matchID)
 
         # Make the callback values a number that represents the index of the game into julia
         for (v,i) in enumerate(_swissDrawObject.currentRound.Games)
@@ -249,6 +256,14 @@ main() do app::Application
                 return nothing
             end
         end
+
+        # and set it
+        if isnothing(matchID) 
+            set_selected!(dropdownMatchup,get_item_at(dropdownMatchup,1))
+        else
+            set_selected!(dropdownMatchup,get_item_at(dropdownMatchup,matchID))
+        end
+
 
         # pull the values out of the spinbuttons into julia
         teamAInputScore = SpinButton(0, 15, 1)
@@ -491,7 +506,9 @@ main() do app::Application
 
         In order to ensure teams don't get forgotten, you can only switch a team with another team.
         ")) 
-        topWindow = vbox(center_box,column_view)
+        topWindow = vbox(center_box,viewport_rcp)
+        set_size_request!(mainWindow, Vector2f(600,800)) 
+
         push_back!(topWindow,updateScore)
         push_back!(topWindow,SwitchTeams)
         push_back!(topWindow,SwitchFields)
@@ -528,6 +545,9 @@ main() do app::Application
 
         # Add the current round info
         column_view = ColumnView()
+        viewport_rpr = Viewport()
+        set_size_request!(viewport_rpr, Vector2f(600,800)) 
+        set_child!(viewport_rpr, column_view)
 
     
         RoundN = push_back_column!(column_view, "Round Number")
@@ -831,7 +851,7 @@ main() do app::Application
         # and some formatting
 
         center_box = hbox(Label("SwissDraw")) 
-        topWindow = vbox(center_box,column_view)
+        topWindow = vbox(center_box,viewport_rpr)
         push_back!(topWindow,updateScore)
         push_back!(topWindow,SwitchTeams)
         push_back!(topWindow,SwitchFields)
@@ -938,9 +958,6 @@ main() do app::Application
     end
 
     # activate!(SwissDrawCreated)
-
-
-
 
     push_front!(topWindowOpenLoadDraw,NewDraw)
     push_back!(topWindowOpenLoadDraw,LoadDraw)
