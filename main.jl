@@ -21,7 +21,7 @@ main("swiss.draw") do app::Application
     other_window = Window(app)
     set_hide_on_close!(other_window, true)
 
-    connect_signal_close_request!(main_window) do self::Window
+    connect_signal_close_request!(mainWindow) do self::Window
         destroy!(other_window)
         return WINDOW_CLOSE_REQUEST_RESULT_ALLOW_CLOSE
     end
@@ -1054,10 +1054,11 @@ main("swiss.draw") do app::Application
         # and add a button to return us to the rest of the analysis
 
         # And lets look at the analysis Page
+
         returnToResults = Mousetrap.Button()
-        set_child!(analysis, Mousetrap.Label("Return to results"))
+        set_child!(returnToResults, Mousetrap.Label("Return to results"))
     
-        connect_signal_clicked!(analysis) do self::Mousetrap.Button
+        connect_signal_clicked!(returnToResults) do self::Mousetrap.Button
     
             activate!(refreshPrevResults)
             return nothing
