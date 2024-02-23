@@ -14,11 +14,14 @@ filething = []
 
 
 
-
-
-main() do app::Application
+main("swiss.draw") do app::Application
 
     mainWindow = Window(app)
+
+    other_window = Window(app)
+    set_hide_on_close!(other_window, true)
+
+    defaultWindowSize = Vector2f(1000, 1100)
     
     # Init Swiss Draw Oject
     _swissDrawObject = []
@@ -26,10 +29,11 @@ main() do app::Application
     topWindowOpenLoadDraw = hbox()
     set_title!(mainWindow, "Ultimate Swiss Draw") 
 
-    NewDraw = Button()
-    set_child!(NewDraw, Label("Create a new Swiss Draw"))
 
-    connect_signal_clicked!(NewDraw) do self::Button
+    NewDraw = Mousetrap.Button()
+    set_child!(NewDraw, Mousetrap.Label("Create a new Swiss Draw"))
+
+    connect_signal_clicked!(NewDraw) do self::Mousetrap.Button
 
         # println(get_selected(dropdownMatchup))
         println("Creating New Swiss Draw" )
@@ -40,10 +44,10 @@ main() do app::Application
     end
 
     _loadPath = ""
-    LoadDraw = Button()
-    set_child!(LoadDraw, Label("Load existing Draw"))
+    LoadDraw = Mousetrap.Button()
+    set_child!(LoadDraw, Mousetrap.Label("Load existing Draw"))
 
-    connect_signal_clicked!(LoadDraw) do self::Button
+    connect_signal_clicked!(LoadDraw) do self::Mousetrap.Button
         println("Saving Swiss Draw")
 
         file_chooser = FileChooser(FILE_CHOOSER_ACTION_OPEN_FILE)
@@ -79,10 +83,10 @@ main() do app::Application
         # _teamPath = "C:\\Users\\tbunc\\github\\SwissDraw.jl\\intial_teams.csv"
         _teamPath = ""
 
-        addTeams = Button()
-        set_child!(addTeams, Label("Add Teams"))
+        addTeams = Mousetrap.Button()
+        set_child!(addTeams, Mousetrap.Label("Add Teams"))
 
-        connect_signal_clicked!(addTeams) do self::Button
+        connect_signal_clicked!(addTeams) do self::Mousetrap.Button
             println("Added Teams")
 
             file_chooser = FileChooser(FILE_CHOOSER_ACTION_OPEN_FILE)
@@ -103,10 +107,10 @@ main() do app::Application
         # _fieldPath = "C:\\Users\\tbunc\\github\\SwissDraw.jl\\field_distances.csv"
         _fieldPath = ""
 
-        addFields = Button()
-        set_child!(addFields, Label("Add Field List"))
+        addFields = Mousetrap.Button()
+        set_child!(addFields, Mousetrap.Label("Add Field List"))
 
-        connect_signal_clicked!(addFields) do self::Button
+        connect_signal_clicked!(addFields) do self::Mousetrap.Button
             println("Added Fields")
 
             file_chooser = FileChooser(FILE_CHOOSER_ACTION_OPEN_FILE)
@@ -124,10 +128,10 @@ main() do app::Application
             # return nothing
         end
 
-        SubmitNewDraw = Button()
-        set_child!(SubmitNewDraw, Label("Create Draw"))
+        SubmitNewDraw = Mousetrap.Button()
+        set_child!(SubmitNewDraw, Mousetrap.Label("Create Draw"))
 
-        connect_signal_clicked!(SubmitNewDraw) do self::Button
+        connect_signal_clicked!(SubmitNewDraw) do self::Mousetrap.Button
 
             println("Created New Swiss Draw")
             _swissDrawObject = createSwissDraw(DataFrame(CSV.File(_teamPath)),DataFrame(CSV.File(_fieldPath)))
@@ -149,7 +153,7 @@ main() do app::Application
         push_front!(topWindowOpenLoadDraw,selectButtons)
 
 
-        info = Label("
+        info = Mousetrap.Label("
     Columns needed:
 
         Team spreadsheet:
@@ -197,10 +201,8 @@ main() do app::Application
     SwissDrawCreated = Action("SwissDrawCreated.page", app) do x::Action
 
         remove_child!(mainWindow)
-
         activate!(refreshCurrentDraw)
         return nothing
-
 
     end
 
@@ -213,7 +215,7 @@ main() do app::Application
         # Add the current round info
         column_view = ColumnView()
         viewport_rcp = Viewport()
-        set_size_request!(viewport_rcp, Vector2f(600,800)) 
+        set_size_request!(viewport_rcp, Vector2f(400,600)) 
         set_child!(viewport_rcp, column_view)
 
         field = push_back_column!(column_view, "Field #")
@@ -227,11 +229,11 @@ main() do app::Application
 
         for (v,i) in enumerate(_swissDrawObject.currentRound.Games)
 
-            set_widget_at!(column_view, field, v, Label(string(i.fieldNumber )))
-            set_widget_at!(column_view, TeamA, v, Label(string(i.teamA )))
-            set_widget_at!(column_view, TeamB, v, Label(string(i.teamB )))
-            set_widget_at!(column_view, TeamAScoreVal, v, Label(string(i.teamAScore )))
-            set_widget_at!(column_view, TeamBScoreVal, v, Label(string(i.teamBScore )))
+            set_widget_at!(column_view, field, v, Mousetrap.Label(string(i.fieldNumber )))
+            set_widget_at!(column_view, TeamA, v, Mousetrap.Label(string(i.teamA )))
+            set_widget_at!(column_view, TeamB, v, Mousetrap.Label(string(i.teamB )))
+            set_widget_at!(column_view, TeamAScoreVal, v, Mousetrap.Label(string(i.teamAScore )))
+            set_widget_at!(column_view, TeamBScoreVal, v, Mousetrap.Label(string(i.teamBScore )))
 
         end
 
@@ -287,10 +289,10 @@ main() do app::Application
             return nothing
         end
 
-        updateGameButton = Button()
-        set_child!(updateGameButton, Label("Submit Scores"))
+        updateGameButton = Mousetrap.Button()
+        set_child!(updateGameButton, Mousetrap.Label("Submit Scores"))
     
-        connect_signal_clicked!(updateGameButton) do self::Button
+        connect_signal_clicked!(updateGameButton) do self::Mousetrap.Button
 
             # println(get_selected(dropdownMatchup))
             println("$matchID , teamA: $_tAScore  teamB: $_tBScore  "   )
@@ -336,10 +338,10 @@ main() do app::Application
 
         end
 
-        SwitchTeamsButton = Button()
-        set_child!(SwitchTeamsButton, Label("Switch Teams"))
+        SwitchTeamsButton = Mousetrap.Button()
+        set_child!(SwitchTeamsButton, Mousetrap.Label("Switch Teams"))
     
-        connect_signal_clicked!(SwitchTeamsButton) do self::Button
+        connect_signal_clicked!(SwitchTeamsButton) do self::Mousetrap.Button
 
             # println(get_selected(dropdownMatchup))
             println("$teamOneID  $teamTwoID "   )
@@ -391,10 +393,10 @@ main() do app::Application
 
         end
 
-        SwitchFieldButton = Button()
-        set_child!(SwitchFieldButton, Label("Switch Fields"))
+        SwitchFieldButton = Mousetrap.Button()
+        set_child!(SwitchFieldButton, Mousetrap.Label("Switch Fields"))
     
-        connect_signal_clicked!(SwitchFieldButton) do self::Button
+        connect_signal_clicked!(SwitchFieldButton) do self::Mousetrap.Button
 
             # println(get_selected(dropdownMatchup))
             println("$fieldAID  $fieldBID "   )
@@ -419,16 +421,16 @@ main() do app::Application
 
 
         _savePath = ""
-        SaveSwissDraw = Button()
-        set_child!(SaveSwissDraw, Label("Save Swiss Draw"))
+        SaveSwissDraw = Mousetrap.Button()
+        set_child!(SaveSwissDraw, Mousetrap.Label("Save Swiss Draw"))
     
-        connect_signal_clicked!(SaveSwissDraw) do self::Button
+        connect_signal_clicked!(SaveSwissDraw) do self::Mousetrap.Button
             println("Saving Swiss Draw")
     
             file_chooser = FileChooser(FILE_CHOOSER_ACTION_SAVE)
             filter = FileFilter("SwissDraw")
             add_allowed_suffix!(filter, "swissdraw")
-            add_filter!(file_chooser, filter)
+            add_filter!(file_chooser, filter)ke 
     
             on_accept!(file_chooser) do self::FileChooser, files::Vector{FileDescriptor}
                 _savePath = get_path(files[1])
@@ -442,10 +444,10 @@ main() do app::Application
         end
 
         # add the download Current Draw
-        downloadDraw = Button()
-        set_child!(downloadDraw, Label("Save Round as CSV"))
+        downloadDraw = Mousetrap.Button()
+        set_child!(downloadDraw, Mousetrap.Label("Save Round as CSV"))
     
-        connect_signal_clicked!(downloadDraw) do self::Button
+        connect_signal_clicked!(downloadDraw) do self::Mousetrap.Button
         
             # Save current round Object
         
@@ -475,20 +477,20 @@ main() do app::Application
 
 
         # And lets look at the previous results stuff
-        previousResults = Button()
-        set_child!(previousResults, Label("Previous Results"))
+        previousResults = Mousetrap.Button()
+        set_child!(previousResults, Mousetrap.Label("Previous Results"))
     
-        connect_signal_clicked!(previousResults) do self::Button
+        connect_signal_clicked!(previousResults) do self::Mousetrap.Button
     
             activate!(refreshPrevResults)
             return nothing
         end
     
         # What if we wanted to run the swiss draw to get new round?
-        RunSwissDrawB = Button()
-        set_child!(RunSwissDrawB, Label("Run Swiss Draw"))
+        RunSwissDrawB = Mousetrap.Button()
+        set_child!(RunSwissDrawB, Mousetrap.Label("Run Swiss Draw"))
     
-        connect_signal_clicked!(RunSwissDrawB) do self::Button
+        connect_signal_clicked!(RunSwissDrawB) do self::Mousetrap.Button
     
             activate!(runSwissDraw)
             return nothing
@@ -497,7 +499,7 @@ main() do app::Application
 
         # and some formatting
 
-        center_box = hbox(Label("
+        center_box = hbox(Mousetrap.Label("
         Current Round
 
         Update the scores, 
@@ -507,25 +509,25 @@ main() do app::Application
         In order to ensure teams don't get forgotten, you can only switch a team with another team.
         ")) 
         topWindow = vbox(center_box,viewport_rcp)
-        set_size_request!(mainWindow, Vector2f(600,800)) 
+        # set_size_request!(mainWindow, Vector2f(400,600)) 
 
         push_back!(topWindow,updateScore)
         push_back!(topWindow,SwitchTeams)
         push_back!(topWindow,SwitchFields)
-        push_back!(topWindow,Label(" "))
+        push_back!(topWindow,Mousetrap.Label(" "))
 
         primaryButtons = hbox()
             push_back!(primaryButtons,downloadDraw)
-            push_back!(primaryButtons,Label(" --- "))
+            push_back!(primaryButtons,Mousetrap.Label(" --- "))
             push_back!(primaryButtons,SaveSwissDraw)
-            push_back!(primaryButtons,Label(" --- "))
+            push_back!(primaryButtons,Mousetrap.Label(" --- "))
             push_back!(primaryButtons,previousResults)            
-            push_back!(primaryButtons,Label(" --- "))
+            push_back!(primaryButtons,Mousetrap.Label(" --- "))
             push_back!(primaryButtons,RunSwissDrawB)
 
         push_back!(topWindow,primaryButtons)
 
-        L2 = Label("
+        L2 = Mousetrap.Label("
         To share the draw, you can download it as a csv. 
 
         Once the score are filled out, you can submit the scores and calculate the next round. 
@@ -536,9 +538,10 @@ main() do app::Application
         set_margin!(center_box, 75)
 
         set_child!(mainWindow, topWindow)
+        set_size_request!(topWindow, defaultWindowSize )
         present!(mainWindow)
     end
-
+    
     refreshPrevResults = Action("refreshPrevResults.page", app) do x::Action
 
         # clear!()
@@ -546,7 +549,7 @@ main() do app::Application
         # Add the current round info
         column_view = ColumnView()
         viewport_rpr = Viewport()
-        set_size_request!(viewport_rpr, Vector2f(600,800)) 
+        set_size_request!(viewport_rpr, Vector2f(400,600)) 
         set_child!(viewport_rpr, column_view)
 
     
@@ -567,13 +570,13 @@ main() do app::Application
 
             for (y,j) in enumerate(i.Games)
 
-                set_widget_at!(column_view, RoundN, rowNum, Label(string( x )))
-                set_widget_at!(column_view, TeamA, rowNum, Label(string(j.teamA )))
-                set_widget_at!(column_view, TeamB, rowNum, Label(string(j.teamB )))
-                set_widget_at!(column_view, TeamAScoreVal, rowNum, Label(string(j.teamAScore )))
-                set_widget_at!(column_view, TeamBScoreVal, rowNum, Label(string(j.teamBScore )))
-                set_widget_at!(column_view, Field, rowNum, Label(string(j.fieldNumber )))
-                set_widget_at!(column_view, Streamed, rowNum, Label(string(j.streamed )))
+                set_widget_at!(column_view, RoundN, rowNum, Mousetrap.Label(string( x )))
+                set_widget_at!(column_view, TeamA, rowNum, Mousetrap.Label(string(j.teamA )))
+                set_widget_at!(column_view, TeamB, rowNum, Mousetrap.Label(string(j.teamB )))
+                set_widget_at!(column_view, TeamAScoreVal, rowNum, Mousetrap.Label(string(j.teamAScore )))
+                set_widget_at!(column_view, TeamBScoreVal, rowNum, Mousetrap.Label(string(j.teamBScore )))
+                set_widget_at!(column_view, Field, rowNum, Mousetrap.Label(string(j.fieldNumber )))
+                set_widget_at!(column_view, Streamed, rowNum, Mousetrap.Label(string(j.streamed )))
 
                 rowNum += 1
 
@@ -595,7 +598,7 @@ main() do app::Application
 
             for (y,j) in enumerate(i.Games)
 
-                # set_widget_at!(column_view, RoundN, rowNum, Label(string( x )))
+                # set_widget_at!(column_view, RoundN, rowNum, Mousetrap.Label(string( x )))
 
                 push_back!(dropdownMatchup,string("Round ",x,": ", j.teamA," vs ",j.teamB)) do z::DropDown
                     roundID = x
@@ -630,10 +633,10 @@ main() do app::Application
             return nothing
         end
 
-        updateGameButton = Button()
-        set_child!(updateGameButton, Label("Submit Scores"))
+        updateGameButton = Mousetrap.Button()
+        set_child!(updateGameButton, Mousetrap.Label("Submit Scores"))
     
-        connect_signal_clicked!(updateGameButton) do self::Button
+        connect_signal_clicked!(updateGameButton) do self::Mousetrap.Button
 
             # println(get_selected(dropdownMatchup))
             # println("$matchID , teamA: $_tAScore  teamB: $_tBScore  "   )
@@ -690,10 +693,10 @@ main() do app::Application
         end
         
 
-        SwitchTeamsButton = Button()
-        set_child!(SwitchTeamsButton, Label("Switch Teams"))
+        SwitchTeamsButton = Mousetrap.Button()
+        set_child!(SwitchTeamsButton, Mousetrap.Label("Switch Teams"))
     
-        connect_signal_clicked!(SwitchTeamsButton) do self::Button
+        connect_signal_clicked!(SwitchTeamsButton) do self::Mousetrap.Button
 
             # println(get_selected(dropdownMatchup))
             println("$teamOneID  $teamTwoID "   )
@@ -762,10 +765,10 @@ main() do app::Application
 
 
 
-        SwitchFieldButton = Button()
-        set_child!(SwitchFieldButton, Label("Switch Fields"))
+        SwitchFieldButton = Mousetrap.Button()
+        set_child!(SwitchFieldButton, Mousetrap.Label("Switch Fields"))
     
-        connect_signal_clicked!(SwitchFieldButton) do self::Button
+        connect_signal_clicked!(SwitchFieldButton) do self::Mousetrap.Button
 
             # println(get_selected(dropdownMatchup))
             println("$fieldAID  $fieldBID "   )
@@ -783,10 +786,10 @@ main() do app::Application
 
 
         _savePath = ""
-        SaveSwissDraw = Button()
-        set_child!(SaveSwissDraw, Label("Save Swiss Draw"))
+        SaveSwissDraw = Mousetrap.Button()
+        set_child!(SaveSwissDraw, Mousetrap.Label("Save Swiss Draw"))
     
-        connect_signal_clicked!(SaveSwissDraw) do self::Button
+        connect_signal_clicked!(SaveSwissDraw) do self::Mousetrap.Button
             println("Saving Swiss Draw")
     
             file_chooser = FileChooser(FILE_CHOOSER_ACTION_SAVE)
@@ -806,10 +809,10 @@ main() do app::Application
         end
 
         # add the download Current Draw
-        downloadDraw = Button()
-        set_child!(downloadDraw, Label("Save Round as CSV"))
+        downloadDraw = Mousetrap.Button()
+        set_child!(downloadDraw, Mousetrap.Label("Save Round as CSV"))
     
-        connect_signal_clicked!(downloadDraw) do self::Button
+        connect_signal_clicked!(downloadDraw) do self::Mousetrap.Button
         
             # Save current round Object
         
@@ -838,33 +841,43 @@ main() do app::Application
         end
     
         # And lets look at the Current round
-        currentRound = Button()
-        set_child!(currentRound, Label("Current Round"))
+        currentRound = Mousetrap.Button()
+        set_child!(currentRound, Mousetrap.Label("Current Round"))
     
-        connect_signal_clicked!(currentRound) do self::Button
+        connect_signal_clicked!(currentRound) do self::Mousetrap.Button
     
             activate!(refreshCurrentDraw)
             return nothing
         end
 
+        # And lets look at the analysis Page
+        analysis = Mousetrap.Button()
+        set_child!(analysis, Mousetrap.Label("Analysis"))
+    
+        connect_signal_clicked!(analysis) do self::Mousetrap.Button
+    
+            activate!(AnalyseSwissDraw)
+            return nothing
+        end
+        
 
         # and some formatting
 
-        center_box = hbox(Label("SwissDraw")) 
+        center_box = hbox(Mousetrap.Label("SwissDraw")) 
         topWindow = vbox(center_box,viewport_rpr)
         push_back!(topWindow,updateScore)
         push_back!(topWindow,SwitchTeams)
         push_back!(topWindow,SwitchFields)
-        push_back!(topWindow,Label(" "))
+        push_back!(topWindow,Mousetrap.Label(" "))
 
         primaryButtons = hbox()
             # push_back!(primaryButtons,downloadDraw)
-            push_back!(primaryButtons,Label(" --- "))
+            push_back!(primaryButtons,Mousetrap.Label(" --- "))
             push_back!(primaryButtons,SaveSwissDraw)            
-            push_back!(primaryButtons,Label(" --- "))
+            push_back!(primaryButtons,Mousetrap.Label(" --- "))
             push_back!(primaryButtons,currentRound)
-            # push_back!(primaryButtons,Label(" --- "))
-            # push_back!(primaryButtons,RunSwissDrawB)
+            push_back!(primaryButtons,Mousetrap.Label(" --- "))
+            push_back!(primaryButtons,analysis)
 
         push_back!(topWindow,primaryButtons)
 
@@ -882,7 +895,6 @@ main() do app::Application
     runSwissDraw = Action("runSwissDraw.page", app) do x::Action
 
 
-
         # Add the current round info
         column_view = ColumnView()
 
@@ -897,33 +909,56 @@ main() do app::Application
 
         for (v,i) in enumerate(_swissDrawObject.currentRound.Games)
 
-            set_widget_at!(column_view, field, v, Label(string(i.fieldNumber )))
-            set_widget_at!(column_view, TeamA, v, Label(string(i.teamA )))
-            set_widget_at!(column_view, TeamB, v, Label(string(i.teamB )))
-            set_widget_at!(column_view, TeamAScoreVal, v, Label(string(i.teamAScore )))
-            set_widget_at!(column_view, TeamBScoreVal, v, Label(string(i.teamBScore )))
+            set_widget_at!(column_view, field, v, Mousetrap.Label(string(i.fieldNumber )))
+            set_widget_at!(column_view, TeamA, v, Mousetrap.Label(string(i.teamA )))
+            set_widget_at!(column_view, TeamB, v, Mousetrap.Label(string(i.teamB )))
+            set_widget_at!(column_view, TeamAScoreVal, v, Mousetrap.Label(string(i.teamAScore )))
+            set_widget_at!(column_view, TeamBScoreVal, v, Mousetrap.Label(string(i.teamBScore )))
 
         end
 
         # Utility Buttons
 
-        RunSwissDraw = Button()
-        set_child!(RunSwissDraw, Label("Run Swiss Draw"))
+        RunSwissDraw = Mousetrap.Button()
+        set_child!(RunSwissDraw, Mousetrap.Label("Run Swiss Draw"))
     
-        connect_signal_clicked!(RunSwissDraw) do self::Button
-
-            # println("$matchID , teamA: $_tAScore  teamB: $_tBScore  "   )
+        connect_signal_clicked!(RunSwissDraw) do self::Mousetrap.Button
 
             CreateNextRound!(_swissDrawObject)
+
             activate!(refreshCurrentDraw)
             return nothing
             
         end
 
-        RefreshSwissDraw = Button()
-        set_child!(RefreshSwissDraw, Label("Refresh Swiss Draw"))
+
+        # And lets look at the previous results stuff
+        previousResults = Mousetrap.Button()
+        set_child!(previousResults, Mousetrap.Label("Previous Results"))
     
-        connect_signal_clicked!(RefreshSwissDraw) do self::Button
+        connect_signal_clicked!(previousResults) do self::Mousetrap.Button
+    
+            activate!(refreshPrevResults)
+            return nothing
+        end
+
+            
+        # And lets look at the Current round
+        currentRound = Mousetrap.Button()
+        set_child!(currentRound, Mousetrap.Label("Current Round"))
+    
+        connect_signal_clicked!(currentRound) do self::Mousetrap.Button
+    
+            activate!(refreshCurrentDraw)
+            return nothing
+        end
+
+            
+
+        RefreshSwissDraw = Mousetrap.Button()
+        set_child!(RefreshSwissDraw, Mousetrap.Label("Refresh Swiss Draw"))
+    
+        connect_signal_clicked!(RefreshSwissDraw) do self::Mousetrap.Button
 
             # println("$matchID , teamA: $_tAScore  teamB: $_tBScore  "   )
 
@@ -937,14 +972,16 @@ main() do app::Application
 
         # and some formatting
 
-        center_box = hbox(Label("Run Swiss Draw")) 
+        center_box = hbox(Mousetrap.Label("Run Swiss Draw")) 
         topWindow = vbox(center_box,column_view)
         
-        push_back!(topWindow,Label("---"))
+        push_back!(topWindow,Mousetrap.Label("---"))
 
         buttons = hbox()
         push_back!(buttons,RunSwissDraw)
         push_back!(buttons,RefreshSwissDraw)
+        push_back!(buttons,currentRound)
+        push_back!(buttons,previousResults)
 
         push_back!(topWindow,buttons)
 
@@ -956,6 +993,103 @@ main() do app::Application
         present!(mainWindow)
 
     end
+
+
+
+    strengthWindow = Action("strengthWindow.page", app) do x::Action
+            
+        # topWindow = vbox()
+
+        # prior we regen the data and charts
+        prevGames = GenerateStrengthCharts(_swissDrawObject,"charts/strengthChanges")
+
+        rankOrder = sort(combine(groupby(prevGames,:teamA),:rankAFinal => maximum),:rankAFinal_maximum)
+
+        # here I assume that the charts are already made nd are on disk
+        strengthNotebook = Notebook()
+        set_size_request!(strengthNotebook, defaultWindowSize )
+
+        for i in rankOrder.teamA
+                image = Mousetrap.Image()
+                create_from_file!(image,"charts\\strengthChanges\\strength changes $i.png" #= load image of size 400x300 =#)
+                
+                image_display = ImageDisplay()
+                create_from_image!(image_display, image)
+
+                push_back!(strengthNotebook, image_display, Mousetrap.Label(i))
+        end
+
+
+        set_tabs_reorderable!(strengthNotebook,true)
+        set_is_scrollable!(strengthNotebook,true)
+
+        # set_child!(topWindow, strengthNotebook)
+
+        set_title!(other_window, "Ultimate Swiss Draw") 
+        set_child!(other_window, strengthNotebook)
+        present!(other_window)
+
+    end
+
+
+    AnalyseSwissDraw = Action("AnalyseSwissDraw.page", app) do x::Action
+
+        set_title!(mainWindow, "Ultimate Swiss Draw: Analyse Draw") 
+
+        # Utility Buttons
+        showStrengths = Mousetrap.Button()
+        set_child!(showStrengths, Mousetrap.Label("Show Strength Charts"))
+    
+        connect_signal_clicked!(showStrengths) do self::Mousetrap.Button
+    
+            activate!(strengthWindow)
+            return nothing
+        end
+            
+        # and add a button to return us to the rest of the analysis
+
+        # And lets look at the analysis Page
+        returnToResults = Mousetrap.Button()
+        set_child!(analysis, Mousetrap.Label("Return to results"))
+    
+        connect_signal_clicked!(analysis) do self::Mousetrap.Button
+    
+            activate!(refreshPrevResults)
+            return nothing
+        end
+
+        
+        # and some formatting
+
+        center_box = hbox(Mousetrap.Label("Analysis")) 
+
+        topWindow = vbox(center_box)
+        set_size_request!(topWindow, defaultWindowSize )
+        
+        push_back!(topWindow,Mousetrap.Label("---"))
+        push_back!(topWindow,showStrengths)
+        push_back!(topWindow,returnToResults)
+
+        # buttons = hbox()
+        # push_back!(buttons,RunSwissDraw)
+        # push_back!(buttons,RefreshSwissDraw)
+        # push_back!(buttons,currentRound)
+        # push_back!(buttons,previousResults)
+
+        # push_back!(topWindow,buttons)
+
+
+
+        set_margin!(center_box, 75)
+
+        set_child!(mainWindow, topWindow)
+        present!(mainWindow)
+
+    end
+
+
+
+
 
     # activate!(SwissDrawCreated)
 
