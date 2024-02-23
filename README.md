@@ -1,9 +1,9 @@
 # SwissDraw.jl
 Swiss Draw implemented in Julia.
 
-Julia 1.10.0 or greater is advised. 
-
 # To install:
+
+Julia 1.10.0 or greater is advised. 
 
 Download from github onto local machine. VS code with the Julia extension is advised 
 
