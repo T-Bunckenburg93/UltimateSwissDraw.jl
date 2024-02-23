@@ -21,6 +21,11 @@ main("swiss.draw") do app::Application
     other_window = Window(app)
     set_hide_on_close!(other_window, true)
 
+    connect_signal_close_request!(main_window) do self::Window
+        destroy!(other_window)
+        return WINDOW_CLOSE_REQUEST_RESULT_ALLOW_CLOSE
+    end
+
     defaultWindowSize = Vector2f(1000, 1100)
     
     # Init Swiss Draw Oject
@@ -1068,6 +1073,18 @@ main("swiss.draw") do app::Application
         
         push_back!(topWindow,Mousetrap.Label("---"))
         push_back!(topWindow,showStrengths)
+        push_back!(topWindow,Mousetrap.Label("
+            How to interpret these chart? 
+
+            All teams start at zero and the red/green arrows are the margin of which they won their first game, 
+            this then leads to their strength increasing or decreasing. They then play another team that should be a somewhat similar strength
+            The difference between the strengths is also the 'expected' outcome, so if a team plays another team and the strength difference is 5, then there should be a 5 point difference between the two teams. 
+            Generally, winning by less than expected or losing by more  than this expected outcome will decrease a teams percieved stength, while winning by more, or losing by less should increase it.
+            This can be affected by other games, ie if you lose by a small margin to a team that then does very well later on, then your strength score should rise slightly in response. 
+            
+            Teams will generally move more earlier on in the swiss draw, and become more settled later on.
+        "))
+        push_back!(topWindow,Mousetrap.Label("---"))
         push_back!(topWindow,returnToResults)
 
         # buttons = hbox()
