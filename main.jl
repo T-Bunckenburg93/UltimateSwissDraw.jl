@@ -220,7 +220,7 @@ main("swiss.draw") do app::Application
         # Add the current round info
         column_view = ColumnView()
         viewport_rcp = Viewport()
-        set_size_request!(viewport_rcp, Vector2f(400,600)) 
+        set_size_request!(viewport_rcp, Vector2f(400,300)) 
         set_child!(viewport_rcp, column_view)
 
         field = push_back_column!(column_view, "Field #")
@@ -435,7 +435,7 @@ main("swiss.draw") do app::Application
             file_chooser = FileChooser(FILE_CHOOSER_ACTION_SAVE)
             filter = FileFilter("SwissDraw")
             add_allowed_suffix!(filter, "swissdraw")
-            add_filter!(file_chooser, filter)ke 
+            add_filter!(file_chooser, filter)
     
             on_accept!(file_chooser) do self::FileChooser, files::Vector{FileDescriptor}
                 _savePath = get_path(files[1])
@@ -554,7 +554,7 @@ main("swiss.draw") do app::Application
         # Add the current round info
         column_view = ColumnView()
         viewport_rpr = Viewport()
-        set_size_request!(viewport_rpr, Vector2f(400,600)) 
+        set_size_request!(viewport_rpr, Vector2f(400,300)) 
         set_child!(viewport_rpr, column_view)
 
     
