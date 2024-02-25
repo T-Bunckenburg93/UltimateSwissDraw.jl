@@ -10,7 +10,7 @@ function mainwindow(mainWindow)
     set_expand!(topWindow, false)
 
     set_horizontal_alignment!(topWindow, ALIGNMENT_CENTER)
-    set_vertical_alignment!(topWindow, ALIGNMENT_CENTER)
+    set_vertical_alignment!(topWindow, ALIGNMENT_START)
 
 
     # Add the current round info as cols
@@ -18,7 +18,7 @@ function mainwindow(mainWindow)
     set_expand!(column_view, true)
 
     sz = get_natural_size(column_view)
-    println(sz)
+
     viewport_rcp = Viewport()
     set_expand!(viewport_rcp, true)
 
@@ -72,6 +72,10 @@ function mainwindow(mainWindow)
     # in theory so that the dropdown defaults to the next unentered one
     matchID = findfirst(x->ismissing(x.teamAScore) && ismissing(x.teamBScore) ,_swissDrawObject.currentRound.Games)
     # println(matchID)
+
+    if isnothing(matchID)
+        matchID = 1
+    end
 
     # Make the callback values a number that represents the index of the game into julia
     for (v,i) in enumerate(_swissDrawObject.currentRound.Games)
@@ -204,6 +208,8 @@ function mainwindow(mainWindow)
     set_margin!(TeamOne, 5)
     set_margin!(TeamTwo, 5)
     set_margin!(SwitchTeamsButton, 10)
+
+    set_margin!(SwitchTeams, 10)
 
 
     push_front!(SwitchTeams,TeamOne)
@@ -371,7 +377,13 @@ function mainwindow(mainWindow)
     
 
     push_back!(topWindow,Mousetrap.Label(" --- "))
-    push_back!(topWindow,MenuButtons(home=false))
+
+    mButtons = MenuButtons(home=false)
+
+    set_horizontal_alignment!(mButtons, ALIGNMENT_CENTER)
+    set_vertical_alignment!(mButtons, ALIGNMENT_END)
+
+    push_back!(topWindow,mButtons)
 
     # L2 = Mousetrap.Label("
     # To share the draw, you can download it as a csv. 

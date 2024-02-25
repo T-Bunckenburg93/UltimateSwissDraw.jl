@@ -200,6 +200,11 @@ main("swiss.draw") do app::Application
         mainwindow(mainWindow)
     end
 
+    include("runDraw.jl")
+    global runDraw = Action("example.runDraw", app)
+    set_function!(runDraw) do x::Action
+        run_draw(mainWindow)
+    end
 
 
 
