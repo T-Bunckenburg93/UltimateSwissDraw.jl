@@ -1,6 +1,6 @@
 
 
-function mainwindow(mainWindow)
+function home_page(mainWindow)
 
     set_title!(mainWindow, "Ultimate Swiss Draw: Update Current Draw") 
 

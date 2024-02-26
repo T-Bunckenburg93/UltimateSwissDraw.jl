@@ -39,6 +39,7 @@ produces a hbox of buttons. Can use varargs to hide buttons.
 ideally the button that takes you to the page that you are on should be hidden
 
 varargs are:
+    save
     home
     standings
     runDraw
@@ -55,11 +56,19 @@ function MenuButtons(;
     # download = true,
     home = true,
     standings = true,
-    runDraw = true,
+    runSwissDraw = true,
     previousResults = true,
     info = true,
 )
 
+
+save = true
+# download = true
+home = true
+standings = true
+runSwissDraw = true
+previousResults = true
+info = true
 
 buttonBox = hbox()
 
@@ -98,7 +107,9 @@ buttonBox = hbox()
         # And lets look at the Current round
         homeButton = Mousetrap.Button()
         set_margin!(homeButton, 10)
-        set_child!(homeButton, Mousetrap.Label("homeButton"))
+        set_child!(homeButton, Mousetrap.Label("Update Round"))
+        set_accent_color!(homeButton, WIDGET_COLOR_ACCENT, false)
+
 
         connect_signal_clicked!(homeButton) do self::Mousetrap.Button
 
@@ -127,20 +138,24 @@ buttonBox = hbox()
         push_back!(buttonBox,standingsButton)
 
 
+
+
     end 
 
-    if runDraw
+    if runSwissDraw
 
         # And lets look at the Current round
         runDrawButton = Mousetrap.Button()
         set_margin!(runDrawButton, 10)
 
-        set_child!(runDrawButton, Mousetrap.Label("runDrawButton"))
+        set_child!(runDrawButton, Mousetrap.Label("Calculate Next Round"))
+        set_accent_color!(runDrawButton, WIDGET_COLOR_ACCENT, false)
+
 
         connect_signal_clicked!(runDrawButton) do self::Mousetrap.Button
 
-            # activate!(refreshCurrentDraw)
-            println("runDraw")
+            activate!(runDraw)
+            # println("runDraw")
             return nothing
         end
 
@@ -153,12 +168,14 @@ buttonBox = hbox()
         # And lets look at the Current round
         previousResultsButton = Mousetrap.Button()
         set_margin!(previousResultsButton, 10)
-        set_child!(previousResultsButton, Mousetrap.Label("previousResultsButton"))
+        set_child!(previousResultsButton, Mousetrap.Label("Previous Results"))
+        set_accent_color!(previousResultsButton, WIDGET_COLOR_ACCENT, false)
+
 
         connect_signal_clicked!(previousResultsButton) do self::Mousetrap.Button
 
-            # activate!(refreshCurrentDraw)
-            println("previousResults")
+            # println("previousResults")
+            activate!(getPreviousResults)
             return nothing
         end
 
@@ -171,7 +188,7 @@ buttonBox = hbox()
         # And lets look at the Current round
         infoButton = Mousetrap.Button()
         set_margin!(infoButton, 10)
-        set_child!(infoButton, Mousetrap.Label("infoButton"))
+        set_child!(infoButton, Mousetrap.Label("Help"))
 
         connect_signal_clicked!(infoButton) do self::Mousetrap.Button
 

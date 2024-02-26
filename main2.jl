@@ -28,11 +28,14 @@ main("swiss.draw") do app::Application
     global _swissDrawObject = []
 
     topWindowOpenLoadDraw = hbox()
+    topWindow = vbox()
+
+    
     set_title!(mainWindow, "Ultimate Swiss Draw") 
 
 
     NewDraw = Mousetrap.Button()
-    set_child!(NewDraw, Mousetrap.Label("Create a new Swiss Draw"))
+    set_child!(NewDraw, Mousetrap.Label("Create New Draw"))
 
     connect_signal_clicked!(NewDraw) do self::Mousetrap.Button
 
@@ -68,6 +71,45 @@ main("swiss.draw") do app::Application
 
         present!(file_chooser)
     end
+
+
+    push_front!(topWindowOpenLoadDraw,NewDraw)
+    push_back!(topWindowOpenLoadDraw,LoadDraw)
+
+
+    set_horizontal_alignment!(topWindowOpenLoadDraw, ALIGNMENT_CENTER)
+    set_vertical_alignment!(topWindowOpenLoadDraw, ALIGNMENT_START)
+
+    # set_margin!(topWindowOpenLoadDraw, 10)
+    set_margin!(NewDraw, 10)
+    set_margin!(LoadDraw, 10)
+
+    set_accent_color!(NewDraw, WIDGET_COLOR_ACCENT, false)
+    set_accent_color!(LoadDraw, WIDGET_COLOR_ACCENT, false)
+
+
+    
+    logo = Mousetrap.Image()
+    create_from_file!(logo,"logo.jpg")
+    
+    image_displaylogo = ImageDisplay()
+    create_from_image!(image_displaylogo, logo)
+    set_size_request!(image_displaylogo, Vector2f(500,500))
+    set_margin!(image_displaylogo, 10)
+    
+
+    
+    push_back!(topWindow,image_displaylogo)
+    push_back!(topWindow,topWindowOpenLoadDraw)
+
+    push_back!(topWindowOpenLoadDraw,image_displaylogo)
+
+
+    set_child!(mainWindow, topWindow)
+    present!(mainWindow)
+
+
+
 
 #= 
     Create the page to present when user hits New Draw
@@ -177,13 +219,16 @@ main("swiss.draw") do app::Application
 
         println(pwd())
 
-        image_display2 = ImageDisplay()
-        create_from_file!(image_display2, "\\field_example.png")
 
-        image_display = ImageDisplay(string(pwd(),"\\field_example.png"))
+        image = Mousetrap.Image()
+        create_from_file!(image,"field_example.png")
+        
+        image_display = ImageDisplay()
+        create_from_image!(image_display, image)
+        set_size_request!(image_display, Vector2f(500,500)) 
 
         push_back!(topWindowOpenLoadDraw,image_display)
-        push_back!(topWindowOpenLoadDraw,image_display2)
+        # push_back!(topWindowOpenLoadDraw,image_display2)
 
         remove_child!(mainWindow)
         set_child!(mainWindow,topWindowOpenLoadDraw)
@@ -197,7 +242,7 @@ main("swiss.draw") do app::Application
     include("homePage.jl")
     global homePage = Action("example.homePage", app)
     set_function!(homePage) do x::Action
-        mainwindow(mainWindow)
+        home_page(mainWindow)
     end
 
     include("runDraw.jl")
@@ -206,11 +251,13 @@ main("swiss.draw") do app::Application
         run_draw(mainWindow)
     end
 
+    include("previousResults.jl")
+    global getPreviousResults = Action("example.getPreviousResults", app)
+    set_function!(getPreviousResults) do x::Action
+        previous_results(mainWindow)
+    end
 
 
-        push_front!(topWindowOpenLoadDraw,NewDraw)
-        push_back!(topWindowOpenLoadDraw,LoadDraw)
-    
-        set_child!(mainWindow, topWindowOpenLoadDraw)
-        present!(mainWindow)
+
+
 end    
