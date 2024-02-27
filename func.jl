@@ -1,6 +1,6 @@
 using DataFrames,  Dates, JLD2, GLPK, StatsBase, LinearAlgebra, CairoMakie
-using EAGO
-# using JuMP
+# using EAGO
+using JuMP
 ### Customer structures that we use and can operate on
 
 """
@@ -374,6 +374,78 @@ end
 
 #     return rankingsDf
 # end
+
+
+"""
+    rankings(_swissDraw::SwissDraw; allGames = true)
+
+    Calculate the rankings and other stats at a team based cardinality
+
+    allGames = true means the current draw will be taken into account, 
+    while false means that only previous rounds will be considered.
+
+"""
+function rankings(_swissDraw::SwissDraw; allGames = true)
+
+    # create a dataframe from the gamesplayed to get an overview of the situation
+    df  = DataFrame(teamA = String[], teamB = String[],margin=Int[], teamAscore = Int[],teamBscore = Int[],stream=Bool[],val = Int[])
+
+    # if we are refreshing the rankings, we are not taking into account the games in the current draw.
+    if allGames
+        for i in _swissDraw.currentRound.Games
+            push!(df, (i.teamA, i.teamB,coalesce(i.teamAScore-i.teamBScore,0),coalesce(i.teamAScore,0),coalesce(i.teamBScore,0),i.streamed,1 ), promote=true)
+            push!(df, (i.teamB, i.teamA,coalesce(i.teamBScore-i.teamAScore,0),coalesce(i.teamBScore,0),coalesce(i.teamAScore,0),i.streamed,-1), promote=true)
+        end
+    end
+
+    # get all the games of the previous rounds
+
+    for j in _swissDraw.previousRound
+        for i in j.Games
+            push!(df, (i.teamA, i.teamB,coalesce(i.teamAScore-i.teamBScore,0),coalesce(i.teamAScore,0),coalesce(i.teamBScore,0),i.streamed,1 ), promote=true)
+            push!(df, (i.teamB, i.teamA,coalesce(i.teamBScore-i.teamAScore,0),coalesce(i.teamBScore,0),coalesce(i.teamAScore,0),i.streamed,-1), promote=true)
+        end
+    end
+
+    # deduce some stats.
+    df.winA = Int.(coalesce.(df.teamAscore,0) .> coalesce.(df.teamBscore,0))
+    df.lossA = Int.(coalesce.(df.teamAscore,0) .< coalesce.(df.teamBscore,0))
+    df.drawA = Int.(coalesce.(df.teamAscore,0) .== coalesce.(df.teamBscore,0))
+    df.byeA = Int.(df.teamB .== "BYE")
+    df.played = Int.(df.teamB .!= "BYE")
+    df.streamed = Int.(df.stream)
+
+    # and create the ranking from WL
+    df.modified_margin = 3*df.winA .+ df.drawA
+
+    # combine the rankings by team
+    rankingsDf = combine(
+            groupby(df,:teamA),
+                            [:modified_margin,:margin,:played,:winA,:lossA,:drawA,:byeA,:streamed] 
+                .=> sum .=> [:modified_margin,:margin,:played,:winA,:lossA,:drawA,:byeA,:streamed] 
+                )
+
+    # and get the strengths based off of linear algebra
+    if allGames
+        strength = teamStrengths(vcat(_swissDraw.previousRound,_swissDraw.currentRound))
+    else
+        strength = teamStrengths(_swissDraw.previousRound)
+    end
+
+    rename!(strength,:team => :teamA)
+
+    leftjoin!(rankingsDf,strength,on = :teamA)
+
+    # sort!(rankingsDf,[:modified_margin,:margin], rev = true)
+    sort!(rankingsDf,:strength, rev = true)
+
+    rankingsDf.rank = collect(1:size(rankingsDf,1))
+
+    return rankingsDf
+end
+
+# allRankings
+# prevRoundsRankings
 
 function allRankings(_swissDraw::SwissDraw)
 
@@ -977,13 +1049,10 @@ function CreateNextRound!(_SwissDraw)
         # allM
     # and now we can pump this into a linear algebra solver to find the best combo
 
-    # model = Model(COSMO.Optimizer)
-    # model = Model(Cbc.Optimizer)
-
     println("begining solver")
 
-    # model = Model(GLPK.Optimizer, add_bridges = false)
-    model = Model(EAGO.Optimizer)
+    model = Model(GLPK.Optimizer, add_bridges = false)
+    # model = Model(EAGO.Optimizer)
 
 
     @variable(model,possibleGames[1:teamSz,1:teamSz,1:fieldSz],Bin)
