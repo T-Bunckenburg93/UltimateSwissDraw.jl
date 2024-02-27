@@ -1,5 +1,6 @@
-using DataFrames, JuMP, Dates, JLD2, GLPK, StatsBase, LinearAlgebra, CairoMakie
-
+using DataFrames,  Dates, JLD2, GLPK, StatsBase, LinearAlgebra, CairoMakie
+using EAGO
+# using JuMP
 ### Customer structures that we use and can operate on
 
 """
@@ -979,8 +980,11 @@ function CreateNextRound!(_SwissDraw)
     # model = Model(COSMO.Optimizer)
     # model = Model(Cbc.Optimizer)
 
+    println("begining solver")
 
-    model = Model(GLPK.Optimizer)
+    # model = Model(GLPK.Optimizer, add_bridges = false)
+    model = Model(EAGO.Optimizer)
+
 
     @variable(model,possibleGames[1:teamSz,1:teamSz,1:fieldSz],Bin)
     # @variable(model, x[1:m, 1:n], Bin);
@@ -1506,19 +1510,19 @@ end
         rounds = _SwissDraw.previousRound
         _SwissDraw.initialRanking
         # create a dataframe from the gamesplayed to get an overview of the situation
-        prevGames  = DataFrame(teamA = String[], teamB = String[],margin=Int[], teamAscore = Int[],teamBscore = Int[], roundPlayed =Int[])
+        prevGames  = DataFrame(teamA = String[], teamB = String[],margin=Int[], teamAscore = Int[],teamBscore = Int[], roundPlayed =Int[], field = Int[], streamed = Bool[])
     
         # I also want both games on each side to make it easier
     
         for j in rounds
             for i in j.Games
-                push!(prevGames, (i.teamA, i.teamB,coalesce(i.teamAScore-i.teamBScore,0),coalesce(i.teamAScore,0),coalesce(i.teamBScore,0),j.roundNumber ), promote=true)
-                push!(prevGames, (i.teamB, i.teamA,coalesce(i.teamBScore-i.teamAScore,0),coalesce(i.teamBScore,0),coalesce(i.teamAScore,0),j.roundNumber ), promote=true)
+                push!(prevGames, (i.teamA, i.teamB,coalesce(i.teamAScore-i.teamBScore,0),coalesce(i.teamAScore,0),coalesce(i.teamBScore,0),j.roundNumber, i.fieldNumber,i.streamed ), promote=true)
+                push!(prevGames, (i.teamB, i.teamA,coalesce(i.teamBScore-i.teamAScore,0),coalesce(i.teamBScore,0),coalesce(i.teamAScore,0),j.roundNumber, i.fieldNumber,i.streamed ), promote=true)
             end
         end
     
         for i in eachrow(_SwissDraw.initialRanking)
-            push!(prevGames, (i.team, "",0,0,0,0 ), promote=true)
+            push!(prevGames, (i.team, "",0,0,0,0,0,false), promote=true)
         end
     
     
