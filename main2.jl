@@ -138,6 +138,7 @@ main("swiss.draw") do app::Application
             on_accept!(file_chooser) do self::FileChooser, files::Vector{FileDescriptor}
                 _teamPath = get_path(files[1])
                 println(_teamPath)
+                set_accent_color!(addTeams, WIDGET_COLOR_SUCCESS , false)
 
             end
 
@@ -162,7 +163,9 @@ main("swiss.draw") do app::Application
             on_accept!(file_chooser) do self::FileChooser, files::Vector{FileDescriptor}
                 _fieldPath = get_path(files[1])
                 println(files)
-                # return nothing
+                set_accent_color!(addFields, WIDGET_COLOR_SUCCESS , false)
+
+                return nothing
             end
 
             present!(file_chooser)
@@ -257,7 +260,11 @@ main("swiss.draw") do app::Application
         previous_results(mainWindow)
     end
 
+    include("standings.jl")
 
-
+    global standingsAction = Action("example.standingsAction", app)
+    set_function!(standingsAction) do x::Action
+        standings(mainWindow)
+    end
 
 end    

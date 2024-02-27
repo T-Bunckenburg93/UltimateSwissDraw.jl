@@ -67,10 +67,8 @@ function run_draw(mainWindow)
 
             # set_child!(mainWindow,overlay)
             # present!(mainWindow)
-
             
-
-            CreateNextRound!(_swissDrawObject)
+            CreateNextRound!(_swissDrawObject, refresh = false)
 
             # and take us back
             activate!(homePage)
@@ -80,7 +78,7 @@ function run_draw(mainWindow)
             
 
         RefreshSwissDraw = Mousetrap.Button()
-        set_accent_color!(RefreshSwissDraw, WIDGET_COLOR_ACCENT, false)
+        set_accent_color!(RefreshSwissDraw, WIDGET_COLOR_ACCENT , false)
 
         set_child!(RefreshSwissDraw, Mousetrap.Label("Refresh Swiss Draw"))
     
@@ -88,12 +86,29 @@ function run_draw(mainWindow)
 
             # println("$matchID , teamA: $_tAScore  teamB: $_tBScore  "   )
 
-            # refreshNextRound!(_swissDrawObject)
-            # activate!(homePage)
+            
+            CreateNextRound!(_swissDrawObject, refresh = true)
+            activate!(homePage)
             println("refresh")
             return nothing
             
         end
+
+
+        info = Mousetrap.Label("
+Please ensure that the above scores are correct.
+
+Note that calculating the next round can take a few moments, depending on size of the draw and your system. Let it run, and don't immediately exit if it says the window is unresponsive. 
+
+
+        ")
+
+        width_clamp_frame = ClampFrame(750, ORIENTATION_HORIZONTAL)
+        set_child!(width_clamp_frame,info)
+        # set_size_request!(info, Vector2f(770,0)) 
+        set_wrap_mode!(info,LABEL_WRAP_MODE_ONLY_ON_WORD)
+
+        push_back!(topWindow,width_clamp_frame)
 
 
         push_back!(topWindow,Mousetrap.Label("---"))
