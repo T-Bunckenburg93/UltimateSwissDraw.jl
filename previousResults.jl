@@ -306,30 +306,17 @@ function previous_results(mainWindow)
            return nothing
        end
 
-
-       # And lets look at the analysis Page
-       analysis = Mousetrap.Button()
-       set_child!(analysis, Mousetrap.Label("Analysis"))
-   
-       connect_signal_clicked!(analysis) do self::Mousetrap.Button
-   
-           activate!(AnalyseSwissDraw)
-           return nothing
-       end
-       
-
        # and some formatting
 
        topWindow = vbox(viewport)
        push_back!(topWindow,updateScore)
        push_back!(topWindow,SwitchTeams)
        push_back!(topWindow,SwitchFields)
-       push_back!(topWindow,analysis)
 
     #    set_margin!(updateScore, 10)
     #    set_margin!(SwitchTeams, 10)
     #    set_margin!(SwitchFields, 10)
-       set_margin!(analysis, 10)
+    #    set_margin!(analysis, 10)
 
 
        push_back!(topWindow,Mousetrap.Label(" --- "))

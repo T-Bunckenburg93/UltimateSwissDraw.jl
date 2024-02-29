@@ -126,11 +126,11 @@ buttonBox = hbox()
         # And lets look at the Current round
         standingsButton = Mousetrap.Button()
         set_margin!(standingsButton, 10)
-        set_child!(standingsButton, Mousetrap.Label("standingsButton"))
+        set_child!(standingsButton, Mousetrap.Label("Rankings"))
 
         connect_signal_clicked!(standingsButton) do self::Mousetrap.Button
 
-            # activate!(refreshCurrentDraw)
+            activate!(standingsAction)
             println("standings")
             return nothing
         end

@@ -21,7 +21,7 @@ function standings(mainWindow)
 
     # and some formatting
     topWindow = vbox()
-    # set_expand!(topWindow, false)
+    set_expand!(topWindow, false)
 
     set_horizontal_alignment!(topWindow, ALIGNMENT_CENTER)
     set_vertical_alignment!(topWindow, ALIGNMENT_START)
@@ -43,15 +43,15 @@ function standings(mainWindow)
         set_margin_vertical!(titles, 10)
 
         push_back!(stackWindow,titles)
-        push_back!(titles, Frame(Mousetrap.Label(i.teamA)))
-        push_back!(titles, Frame(Mousetrap.Label(string(round(i.strength,digits = 4)))))
+        push_back!(titles, Mousetrap.Label(i.teamA))
+        push_back!(titles, Mousetrap.Label(string(round(i.strength,digits = 4))))
 
         # create the colls 
 
         # Add the current round info
         column_view = ColumnView()
         viewport = Viewport()
-        set_size_request!(viewport, Vector2f(650,700)) 
+        set_size_request!(viewport, Vector2f(650,400)) 
         set_child!(viewport, column_view)
 
         rnd = push_back_column!(column_view, "Round")
@@ -77,6 +77,7 @@ function standings(mainWindow)
 
         end
 
+        set_expand!(viewport, true)
         push_back!(stackWindow,viewport)
 
         # and add the strngth chart
@@ -117,12 +118,78 @@ function standings(mainWindow)
     push_back!(topWindow, hbox(StackSidebar(stack), stack)) # Create StackSidebar from stack
 
 
+    # Now to create extra buttons
+    extraButtons = hbox()
+    set_horizontal_alignment!(extraButtons, ALIGNMENT_CENTER)
+    set_vertical_alignment!(extraButtons, ALIGNMENT_END)
+    set_margin!(extraButtons, 10)
 
 
 
+    downloadRankings = Mousetrap.Button()
+
+    set_accent_color!(downloadRankings, WIDGET_COLOR_ACCENT, false)
+
+    set_child!(downloadRankings, Mousetrap.Label("Download Rankings"))
+
+    connect_signal_clicked!(downloadRankings) do self::Mousetrap.Button
+    
+        # Save current round Object
+    
+        file_chooser = FileChooser(FILE_CHOOSER_ACTION_SAVE)
+        filter = FileFilter("CSV")
+        add_allowed_suffix!(filter, "csv")
+        add_filter!(file_chooser, filter)
+    
+        on_accept!(file_chooser) do self::FileChooser, files::Vector{FileDescriptor}
+    
+            rankDf = rankings(_swissDrawObject, allGames = false)
+
+            DataFrames.select!(rankDf,([
+                    :rank => :Rank,
+                    :teamA => :Team,
+                    :strength => :Strength,
+                    :played => :GamesPlayed,
+                    :margin => :TotalMargin,
+                    :winA => :Wins,
+                    :lossA => :Losses,
+                    :drawA => :Draws,
+                    :byeA=> :Byes]))
+       
+    
+            _downloadPath = get_path(files[1])
+
+            CSV.write(_downloadPath, rankDf)
+            println("Saved the current rankings as a CSV")
+            println(_downloadPath)
+    
+        end
+    
+        present!(file_chooser)
+        return nothing
+    end
+
+    push_back!(extraButtons,downloadRankings)
+
+    # Add popout window for all strengths
+
+    
+    popOutStength = Mousetrap.Button()
+
+    set_accent_color!(popOutStength, WIDGET_COLOR_ACCENT, false)
+
+    set_child!(popOutStength, Mousetrap.Label("All Strengths"))
+
+    connect_signal_clicked!(popOutStength) do self::Mousetrap.Button
+        activate!(strengthsPopoutAction)
+    end
+    push_back!(extraButtons,popOutStength)
 
 
+    # and now go to the ALL buttons.
+    push_back!(topWindow,Mousetrap.Label(" --- "))
 
+    push_back!(topWindow,extraButtons)
 
 
     push_back!(topWindow,Mousetrap.Label(" --- "))

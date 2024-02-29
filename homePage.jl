@@ -301,27 +301,31 @@ function home_page(mainWindow)
     
         # Save current round Object
     
-        file_chooser = FileChooser(FILE_CHOOSER_ACTION_SAVE)
-        filter = FileFilter("CSV")
-        add_allowed_suffix!(filter, "csv")
-        add_filter!(file_chooser, filter)
+        # file_chooser = FileChooser(FILE_CHOOSER_ACTION_SAVE)
+        # filter = FileFilter("CSV")
+        # add_allowed_suffix!(filter, "csv")
+        # add_filter!(file_chooser, filter)
     
-        on_accept!(file_chooser) do self::FileChooser, files::Vector{FileDescriptor}
+        # on_accept!(file_chooser) do self::FileChooser, files::Vector{FileDescriptor}
     
-            _df = DataFrame(teamA = String[], teamB = String[], FieldNumber = Int64[])
-            for i in _swissDrawObject.currentRound.Games
-                push!(_df,[i.teamA,i.teamB,i.fieldNumber])
-            end
+        #     _df = DataFrame(teamA = String[], teamB = String[], FieldNumber = Int64[])
+        #     for i in _swissDrawObject.currentRound.Games
+        #         push!(_df,[i.teamA,i.teamB,i.fieldNumber])
+        #     end
     
-            _downloadPath = get_path(files[1])
+        #     _downloadPath = get_path(files[1])
 
-            CSV.write(_downloadPath, _df)
-            println("Saved the current round as a CSV")
-            println(_downloadPath)
+        #     CSV.write(_downloadPath, _df)
+        #     println("Saved the current round as a CSV")
+        #     println(_downloadPath)
+
+
+        # end
     
-        end
-    
-        present!(file_chooser)
+        # present!(file_chooser)
+        
+        # call the downloadDraw Popout
+        activate!(DownloadDrawPopoutAction)
         return nothing
     end
 

@@ -14,11 +14,16 @@ main("swiss.draw") do app::Application
 
     mainWindow = Window(app)
 
-    other_window = Window(app)
-    set_hide_on_close!(other_window, true)
+    strengthPopoutWindow = Window(app)
+    set_hide_on_close!(strengthPopoutWindow, true)
+
+    downloadPopoutWindow = Window(app)
+    set_hide_on_close!(downloadPopoutWindow, true)
 
     connect_signal_close_request!(mainWindow) do self::Window
-        destroy!(other_window)
+        destroy!(downloadPopoutWindow)
+        destroy!(strengthPopoutWindow)
+
         return WINDOW_CLOSE_REQUEST_RESULT_ALLOW_CLOSE
     end
 
@@ -241,7 +246,6 @@ main("swiss.draw") do app::Application
 
     end
 
-
     include("homePage.jl")
     global homePage = Action("example.homePage", app)
     set_function!(homePage) do x::Action
@@ -267,4 +271,19 @@ main("swiss.draw") do app::Application
         standings(mainWindow)
     end
 
-end    
+    include("strengthsPopout.jl")
+
+    global strengthsPopoutAction = Action("example.strengthsPopoutAction", app)
+    set_function!(strengthsPopoutAction) do x::Action
+        strengthsPopout(strengthPopoutWindow)
+    end
+
+    include("DownloadDrawPopout.jl")
+
+    global DownloadDrawPopoutAction = Action("example.DownloadDrawPopout", app)
+    set_function!(DownloadDrawPopoutAction) do x::Action
+        DownloadDrawPopout(downloadPopoutWindow)
+    end
+
+
+end 
