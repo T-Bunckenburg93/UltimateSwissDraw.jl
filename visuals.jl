@@ -4,24 +4,18 @@ using Pkg
 Pkg.activate(pwd());
 include("func.jl")
 
-using CSV, LinearAlgebra, StatsBase, GraphMakie, Graphs
-# using CairoMakie
+using CSV, LinearAlgebra, StatsBase
+using CairoMakie
 
 
 # sd = load_object("miso3.swissdraw")
-sd = load_object("div2Example5.swissdraw")
+sd = load_object("div2Seeding.swissdraw")
 
 
 # ok so I want some swiss draw metrics
-
-prevRoundsRankings(sd)
-ddf = allRankings(sd)
-# CreateNextRound!(sd)
-
-vcat(sd.previousRound,sd.currentRound)
+ddf = Rankings(sd,allGames = true)
 
 rNumber = sd.currentRound.roundNumber -1 
-
 
 allStrengths = DataFrame()
 
@@ -65,9 +59,10 @@ end
 
 sort(df,:teamA)
 
+
 allDF = DataFrame()
 
-for i in 1:3
+for i in 1:maximum(df.roundPlayed)
     df.roundCalculated .= i 
     append!(allDF,df)
 end
@@ -91,3 +86,68 @@ sort(filter(x->x.roundCalculated == 3,allDF),:marginDiffABS,rev = true)
 combine(groupby(allDF,:roundCalculated),:marginDiffABS .=> [mean,var])
 
 
+t = "Whakatu"
+
+filter(
+    x->x.roundPlayed == x.roundCalculated
+    && (x.teamA == t || x.teamB == t)
+    ,
+    allDF
+)
+
+allStrengths.roundPlus1 = allStrengths.round .+1
+
+tStrength = filter(x->x.team == t  ,allStrengths)
+
+plot(tStrength.round,tStrength.strength, colour = tStrength.team)
+
+# code to see the strength changes over time
+# f = Figure()
+# Axis(f[1, 1])
+# for i in unique(allStrengths.team)
+
+#     lines!(
+#             filter(x->x.team == i  ,allStrengths).round, 
+#             filter(x->x.team == i  ,allStrengths).strength,
+#             label = i
+#         )
+# end 
+# axislegend()
+# f
+
+allDF
+# We need to merge strengths on
+
+allDFStrength = leftjoin(
+allDF,
+rename(allStrengths,:strength=>:strengthA),
+on = [:teamA => :team, :roundPlayed => :round],
+# renamecols = :strength => :strengthA
+)
+
+select!(allDFStrength,Not(:rank))
+
+leftjoin!(
+allDFStrength,
+rename(allStrengths,:strength=>:strengthB),
+on = [:teamB => :team, :roundPlayed => :round],
+# renamecols = :strength => :strengthA
+)
+
+select!(allDFStrength,Not(:rank))
+
+allDFStrength
+
+teamToLookAt = "GG"
+
+teamStrength = filter(x->x.team == teamToLookAt  ,allStrengths)
+
+allStrength = 
+    filter(x->x.roundPlayed == x.roundCalculated &&
+             (x.teamA == teamToLookAt || x.teamB == teamToLookAt)
+             ,allDFStrength)
+
+             allStrength
+
+
+             
