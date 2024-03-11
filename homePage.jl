@@ -298,87 +298,10 @@ function home_page(mainWindow)
     set_child!(downloadDraw, Mousetrap.Label("Save Round for UltiCentral"))
 
     connect_signal_clicked!(downloadDraw) do self::Mousetrap.Button
-    
-        # Save current round Object
-    
-        # file_chooser = FileChooser(FILE_CHOOSER_ACTION_SAVE)
-        # filter = FileFilter("CSV")
-        # add_allowed_suffix!(filter, "csv")
-        # add_filter!(file_chooser, filter)
-    
-        # on_accept!(file_chooser) do self::FileChooser, files::Vector{FileDescriptor}
-    
-        #     _df = DataFrame(teamA = String[], teamB = String[], FieldNumber = Int64[])
-        #     for i in _swissDrawObject.currentRound.Games
-        #         push!(_df,[i.teamA,i.teamB,i.fieldNumber])
-        #     end
-    
-        #     _downloadPath = get_path(files[1])
-
-        #     CSV.write(_downloadPath, _df)
-        #     println("Saved the current round as a CSV")
-        #     println(_downloadPath)
-
-
-        # end
-    
-        # present!(file_chooser)
-        
         # call the downloadDraw Popout
         activate!(DownloadDrawPopoutAction)
         return nothing
     end
-
-
-    # # And lets look at the previous results stuff
-    # previousResults = Mousetrap.Button()
-    # set_child!(previousResults, Mousetrap.Label("Previous Results"))
-
-    # connect_signal_clicked!(previousResults) do self::Mousetrap.Button
-
-    #     activate!(refreshPrevResults)
-    #     return nothing
-    # end
-
-    # # What if we wanted to run the swiss draw to get new round?
-    # RunSwissDrawB = Mousetrap.Button()
-    # set_child!(RunSwissDrawB, Mousetrap.Label("Run Swiss Draw"))
-
-    # connect_signal_clicked!(RunSwissDrawB) do self::Mousetrap.Button
-
-    #     activate!(runSwissDraw)
-    #     return nothing
-    # end
-
-
-    # # and some formatting
-
-    # center_box = hbox(Mousetrap.Label("
-    # Current Round
-
-    # Update the scores, 
-    # Switch teams,
-    # move fields.
-
-    # In order to ensure teams don't get forgotten, you can only switch a team with another team.
-    # ")) 
-    # topWindow = vbox(center_box,viewport_rcp)
-    # # set_size_request!(mainWindow, Vector2f(400,600)) 
-
-    # push_back!(topWindow,updateScore)
-    # push_back!(topWindow,SwitchTeams)
-    # push_back!(topWindow,SwitchFields)
-    # push_back!(topWindow,Mousetrap.Label(" "))
-
-    # primaryButtons = hbox()
-    #     push_back!(primaryButtons,downloadDraw)
-    #     push_back!(primaryButtons,Mousetrap.Label(" --- "))
-    #     push_back!(primaryButtons,SaveSwissDraw)
-    #     push_back!(primaryButtons,Mousetrap.Label(" --- "))
-    #     push_back!(primaryButtons,previousResults)            
-    #     push_back!(primaryButtons,Mousetrap.Label(" --- "))
-    #     push_back!(primaryButtons,RunSwissDrawB)
-    
 
     push_back!(topWindow,Mousetrap.Label(" --- "))
 
@@ -389,18 +312,7 @@ function home_page(mainWindow)
 
     push_back!(topWindow,mButtons)
 
-    # L2 = Mousetrap.Label("
-    # To share the draw, you can download it as a csv. 
-
-    # Once the score are filled out, you can submit the scores and calculate the next round. 
-    # Note that missing scores will be assumed as 0 
-    # ")
-    # push_back!(topWindow,L2)
-
-    # set_margin!(center_box, 75)
-
     set_child!(mainWindow, topWindow)
-    # set_size_request!(topWindow, defaultWindowSize )
     present!(mainWindow)
     return nothing
 end
