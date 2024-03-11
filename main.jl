@@ -20,9 +20,13 @@ main("swiss.draw") do app::Application
     downloadPopoutWindow = Window(app)
     set_hide_on_close!(downloadPopoutWindow, true)
 
+    infoWindow = Window(app)
+    set_hide_on_close!(infoWindow, true)
+
     connect_signal_close_request!(mainWindow) do self::Window
         destroy!(downloadPopoutWindow)
         destroy!(strengthPopoutWindow)
+        destroy!(infoWindow)
 
         return WINDOW_CLOSE_REQUEST_RESULT_ALLOW_CLOSE
     end
@@ -93,7 +97,6 @@ main("swiss.draw") do app::Application
     set_accent_color!(LoadDraw, WIDGET_COLOR_ACCENT, false)
 
 
-    
     logo = Mousetrap.Image()
     create_from_file!(logo,"logo.jpg")
     
@@ -103,11 +106,28 @@ main("swiss.draw") do app::Application
     set_margin!(image_displaylogo, 10)
     
 
+    # and add the info button
+    info = Mousetrap.Button()
+
+    set_child!(info, Mousetrap.Label("❔"))
+    set_accent_color!(info, WIDGET_COLOR_ACCENT, true)
+
+    connect_signal_clicked!(info) do self::Mousetrap.Button
+        println("Clicked Info")
+        activate!(infoAction)
+        return nothing
+        
+    end
+    set_horizontal_alignment!(info, ALIGNMENT_END)
+    set_vertical_alignment!(info, ALIGNMENT_START)
+    set_margin!(info, 10)
+
     
     push_back!(topWindow,image_displaylogo)
     push_back!(topWindow,topWindowOpenLoadDraw)
+    push_back!(topWindowOpenLoadDraw,info)
 
-    push_back!(topWindowOpenLoadDraw,image_displaylogo)
+    # push_back!(topWindowOpenLoadDraw,image_displaylogo)
 
 
     set_child!(mainWindow, topWindow)
@@ -144,6 +164,10 @@ main("swiss.draw") do app::Application
                 _teamPath = get_path(files[1])
                 println(_teamPath)
                 set_accent_color!(addTeams, WIDGET_COLOR_SUCCESS , false)
+                
+                if _fieldPath != "" && _teamPath != ""
+                    set_accent_color!(SubmitNewDraw, WIDGET_COLOR_ACCENT , false)
+                end
 
             end
 
@@ -170,12 +194,79 @@ main("swiss.draw") do app::Application
                 println(files)
                 set_accent_color!(addFields, WIDGET_COLOR_SUCCESS , false)
 
+                if _fieldPath != "" && _teamPath != ""
+                    set_accent_color!(SubmitNewDraw, WIDGET_COLOR_ACCENT , false)
+                end
+
                 return nothing
             end
 
             present!(file_chooser)
             # return nothing
         end
+
+        # and add the info button
+        info = Mousetrap.Button()
+
+        set_child!(info, Mousetrap.Label("❔"))
+        set_accent_color!(info, WIDGET_COLOR_ACCENT, true)
+
+        connect_signal_clicked!(info) do self::Mousetrap.Button
+            println("Clicked Info")
+            activate!(infoAction)
+            return nothing
+            
+        end
+        set_horizontal_alignment!(info, ALIGNMENT_END)
+        set_vertical_alignment!(info, ALIGNMENT_START)
+        set_margin!(info, 10)
+
+        topWindowOpenLoadDraw = vbox()
+
+        logo = Mousetrap.Image()
+        create_from_file!(logo,"logo.jpg")
+        
+        image_displaylogo = ImageDisplay()
+        create_from_image!(image_displaylogo, logo)
+        set_size_request!(image_displaylogo, Vector2f(500,500))
+        set_margin!(image_displaylogo, 10)
+
+        push_back!(topWindowOpenLoadDraw,image_displaylogo)
+
+        selectButtons = hbox()
+
+        set_horizontal_alignment!(selectButtons, ALIGNMENT_CENTER)
+        set_vertical_alignment!(selectButtons, ALIGNMENT_START)
+
+        push_front!(selectButtons,addTeams)
+        push_back!(selectButtons,addFields)
+        push_back!(selectButtons,info)
+
+        set_margin!(addTeams, 10)
+        set_margin!(addFields, 10)
+
+
+        push_back!(topWindowOpenLoadDraw,selectButtons)
+
+
+    #     info = Mousetrap.Label("
+    # Columns needed:
+
+    #     Team spreadsheet:
+    #         'team' - The name and identifier of the team. 
+    #             Note and odd number of teams will result in 
+    #             a 'BYE' team being created.
+    #         'rank' - The inital seeding. if you have no 
+    #                 idea of the seeding random is fine
+
+    #     Field spreadsheet:
+    #         'number' - The number and identifier of the field
+    #         'x' - the x position of the field
+    #         'y' - the y position of the field
+    #         'stream' - if the field will be streamed or not. 
+    #                 This is intended for as many teams to 
+    #                 get a streamed game. 
+    #     ")
 
         SubmitNewDraw = Mousetrap.Button()
         set_child!(SubmitNewDraw, Mousetrap.Label("Create Draw"))
@@ -192,51 +283,28 @@ main("swiss.draw") do app::Application
 
         end
 
-        topWindowOpenLoadDraw = vbox()
+        set_margin!(SubmitNewDraw, 10)
+        set_horizontal_alignment!(SubmitNewDraw, ALIGNMENT_CENTER)
+        set_vertical_alignment!(SubmitNewDraw, ALIGNMENT_START)
 
-        selectButtons = hbox()
+        selectionButtons = hbox()
+        set_horizontal_alignment!(selectionButtons, ALIGNMENT_CENTER)
+        set_vertical_alignment!(selectionButtons, ALIGNMENT_START)
 
-        push_front!(selectButtons,addTeams)
-        push_back!(selectButtons,addFields)
+        push_back!(selectionButtons,SubmitNewDraw)
 
-        push_front!(topWindowOpenLoadDraw,selectButtons)
-
-
-        info = Mousetrap.Label("
-    Columns needed:
-
-        Team spreadsheet:
-            'team' - The name and identifier of the team. 
-                Note and odd number of teams will result in 
-                a 'BYE' team being created.
-            'rank' - The inital seeding. if you have no 
-                    idea of the seeding random is fine
-
-        Field spreadsheet:
-            'number' - The number and identifier of the field
-            'x' - the x position of the field
-            'y' - the y position of the field
-            'stream' - if the field will be streamed or not. 
-                    This is intended for as many teams to 
-                    get a streamed game. 
-        ")
+        push_back!(topWindowOpenLoadDraw,selectionButtons)
 
 
-        push_back!(topWindowOpenLoadDraw,SubmitNewDraw)
-        push_back!(topWindowOpenLoadDraw,info)
-
-        println(pwd())
-
-
-        image = Mousetrap.Image()
-        create_from_file!(image,"field_example.png")
+        # image = Mousetrap.Image()
+        # create_from_file!(image,"field_example.png")
         
-        image_display = ImageDisplay()
-        create_from_image!(image_display, image)
-        set_size_request!(image_display, Vector2f(500,500)) 
+        # image_display = ImageDisplay()
+        # create_from_image!(image_display, image)
+        # set_size_request!(image_display, Vector2f(500,500)) 
 
-        push_back!(topWindowOpenLoadDraw,image_display)
-        # push_back!(topWindowOpenLoadDraw,image_display2)
+        # push_back!(topWindowOpenLoadDraw,image_display)
+        # # push_back!(topWindowOpenLoadDraw,image_display2)
 
         remove_child!(mainWindow)
         set_child!(mainWindow,topWindowOpenLoadDraw)
@@ -265,25 +333,27 @@ main("swiss.draw") do app::Application
     end
 
     include("standings.jl")
-
     global standingsAction = Action("example.standingsAction", app)
     set_function!(standingsAction) do x::Action
         standings(mainWindow)
     end
 
     include("strengthsPopout.jl")
-
     global strengthsPopoutAction = Action("example.strengthsPopoutAction", app)
     set_function!(strengthsPopoutAction) do x::Action
         strengthsPopout(strengthPopoutWindow)
     end
 
     include("DownloadDrawPopout.jl")
-
     global DownloadDrawPopoutAction = Action("example.DownloadDrawPopout", app)
     set_function!(DownloadDrawPopoutAction) do x::Action
         DownloadDrawPopout(downloadPopoutWindow)
     end
 
+    include("info.jl")
+    global infoAction = Action("example.infoAction", app)
+    set_function!(infoAction) do x::Action
+        infoDump(infoWindow)
+    end
 
 end 
