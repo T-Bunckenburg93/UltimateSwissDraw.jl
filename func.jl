@@ -889,17 +889,29 @@ function CreateNextRound!(_SwissDraw::SwissDraw; refresh=false)
     fieldCost = zeros(sheduleSz,fieldSz)
     StreamedCost = zeros(sheduleSz,fieldSz)
     TeamStreamedCost = zeros(sheduleSz,fieldSz)
+    TeamRankStream = zeros(sheduleSz,fieldSz)
 
     for i in 1:sheduleSz
         for j in 1:fieldSz
 
+            # This gets the distance that the two prior fields are apart from the prospective field. 
             fieldCost[i,j] = (_swissDrawObject.layout.distanceMatrix[ schedule.fieldNumberA[i], j ] ^2 + 
                               _swissDrawObject.layout.distanceMatrix[ schedule.fieldNumberB[i], j ] ^2 )
 
+            # This checks if the prospective field is a streamed field
             StreamedCost[i,j] = _swissDrawObject.layout.fieldDF.stream[j] * -1 + 1
+            # if isnan(StreamedCost[i,j]) 
+            #     StreamedCost[i,j] = 0
+            # end
 
+
+            # This checks to see if the teams have been previously streamed. 
             TeamStreamedCost[i,j] = (schedule.streamA[i] * _swissDrawObject.layout.fieldDF.stream[j] *5 +
-                                     schedule.streamB[i] * _swissDrawObject.layout.fieldDF.stream[j] *5 ) ^ 2
+                                     schedule.streamB[i] * _swissDrawObject.layout.fieldDF.stream[j] *5 ) ^ 2 .+1
+
+            # this makes teams of lower rank more likely to get a streamed game
+            TeamRankStream[i,j] = _swissDrawObject.layout.fieldDF.stream[j] * (schedule.rankA[i] + schedule.rankB[i])/20
+
         end
     end
 
@@ -912,12 +924,19 @@ function CreateNextRound!(_SwissDraw::SwissDraw; refresh=false)
     StreamedCost = StreamedCost .* 100
     TeamStreamedCost = TeamStreamedCost ./ maximum(TeamStreamedCost) .* 10
     fieldCost = fieldCost ./ maximum(fieldCost) 
+    
+    # If there are no stream games this will return NAN, so we make it zero.
+    # println(unique(StreamedCost))
+    # println(unique(TeamStreamedCost))
+    # println(unique(fieldCost))
 
     streamM = 
         StreamedCost .+ 
         TeamStreamedCost .+ 
-        fieldCost
+        fieldCost .+
+        TeamRankStream
 
+    # If there are no stream games this will return NAN, so we make it zero.
     println("begining field solver")
 
     model = Model(GLPK.Optimizer, add_bridges = false)
@@ -1240,8 +1259,8 @@ end
         sort!(teamStats,:roundPlayed)
     
     
-        maxStrength = maximum((prevGames.prevStrengthA .+ prevGames.margin)) 
-        minStrength = minimum((prevGames.prevStrengthA .+ prevGames.margin))
+        maxStrength = maximum((prevGames.prevStrengthA .+ prevGames.margin)) + 0.01
+        minStrength = minimum((prevGames.prevStrengthA .+ prevGames.margin)) - 0.01
     
         u = unique(prevGames.teamA)
         for team in u
