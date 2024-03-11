@@ -62,23 +62,23 @@ function MenuButtons(;
 )
 
 
-save = true
-# download = true
-home = true
-standings = true
-runSwissDraw = true
-previousResults = true
-info = true
+# save = true
+# # download = true
+# home = true
+# standings = true
+# runSwissDraw = true
+# previousResults = true
+# info = true
 
 buttonBox = hbox()
 
-    if save
+
         # And lets look at the Current round
         saveButton = Mousetrap.Button()
         set_margin!(saveButton, 10)
         set_child!(saveButton, Mousetrap.Label("💾"))
-
         set_accent_color!(saveButton, WIDGET_COLOR_ACCENT, true)
+
 
         connect_signal_clicked!(saveButton) do self::Mousetrap.Button
             println("Saving Swiss Draw")
@@ -100,16 +100,17 @@ buttonBox = hbox()
         end
 
         push_back!(buttonBox,saveButton)
-    end 
 
 
-    if home
+
         # And lets look at the Current round
         homeButton = Mousetrap.Button()
         set_margin!(homeButton, 10)
         set_child!(homeButton, Mousetrap.Label("Update Round"))
-        set_accent_color!(homeButton, WIDGET_COLOR_ACCENT, false)
-
+        
+        if home
+            set_accent_color!(homeButton, WIDGET_COLOR_ACCENT, false)
+        end
 
         connect_signal_clicked!(homeButton) do self::Mousetrap.Button
 
@@ -119,38 +120,42 @@ buttonBox = hbox()
         end
 
         push_back!(buttonBox,homeButton)
-    end 
 
-    if standings
 
         # And lets look at the Current round
         standingsButton = Mousetrap.Button()
         set_margin!(standingsButton, 10)
         set_child!(standingsButton, Mousetrap.Label("Rankings"))
 
+        if standings
+            set_accent_color!(standingsButton, WIDGET_COLOR_ACCENT, false)
+        end
+
         connect_signal_clicked!(standingsButton) do self::Mousetrap.Button
+            
 
             activate!(standingsAction)
             println("standings")
             return nothing
         end
 
+
+
         push_back!(buttonBox,standingsButton)
 
 
 
 
-    end 
-
-    if runSwissDraw
 
         # And lets look at the Current round
         runDrawButton = Mousetrap.Button()
         set_margin!(runDrawButton, 10)
 
         set_child!(runDrawButton, Mousetrap.Label("Calculate Next Round"))
-        set_accent_color!(runDrawButton, WIDGET_COLOR_ACCENT, false)
 
+        if runSwissDraw
+            set_accent_color!(runDrawButton, WIDGET_COLOR_ACCENT, false)
+        end
 
         connect_signal_clicked!(runDrawButton) do self::Mousetrap.Button
 
@@ -159,18 +164,22 @@ buttonBox = hbox()
             return nothing
         end
 
+
+
         push_back!(buttonBox,runDrawButton)
 
-    end     
+
     
-    if previousResults
+
 
         # And lets look at the Current round
         previousResultsButton = Mousetrap.Button()
         set_margin!(previousResultsButton, 10)
         set_child!(previousResultsButton, Mousetrap.Label("Previous Results"))
-        set_accent_color!(previousResultsButton, WIDGET_COLOR_ACCENT, false)
 
+        if previousResults
+            set_accent_color!(previousResultsButton, WIDGET_COLOR_ACCENT, false)
+        end 
 
         connect_signal_clicked!(previousResultsButton) do self::Mousetrap.Button
 
@@ -181,25 +190,25 @@ buttonBox = hbox()
 
         push_back!(buttonBox,previousResultsButton)
 
-    end 
 
-    if info
-
+    
         # And lets look at the Current round
         infoButton = Mousetrap.Button()
         set_margin!(infoButton, 10)
-        set_child!(infoButton, Mousetrap.Label("Help"))
+        set_child!(infoButton, Mousetrap.Label("❔"))
+        set_accent_color!(infoButton, WIDGET_COLOR_ACCENT, true)
+
 
         connect_signal_clicked!(infoButton) do self::Mousetrap.Button
 
-            # activate!(refreshCurrentDraw)
-            println("info")
+            println("Clicked Info")
+            activate!(infoAction)
+
             return nothing
         end
 
         push_back!(buttonBox,infoButton)
 
-    end 
 
     set_horizontal_alignment!(buttonBox, ALIGNMENT_CENTER)
     set_vertical_alignment!(buttonBox, ALIGNMENT_END)
