@@ -44,7 +44,7 @@ function standings(mainWindow)
 
         push_back!(stackWindow,titles)
         push_back!(titles, Mousetrap.Label(i.teamA))
-        push_back!(titles, Mousetrap.Label(string(round(i.strength,digits = 4))))
+        push_back!(titles, Mousetrap.Label(string("   ",round(i.strength,digits = 4))))
 
         # create the colls 
 
@@ -95,7 +95,7 @@ function standings(mainWindow)
         set_horizontal_alignment!(image_display, ALIGNMENT_START)
         set_vertical_alignment!(image_display, ALIGNMENT_START)
 
-        push_back!(stackWindow, image_display )
+        push_back!(stackWindow, image_display)
 
 
         # will need to create the rest here
@@ -127,6 +127,8 @@ function standings(mainWindow)
 
 
     downloadRankings = Mousetrap.Button()
+    set_margin!(downloadRankings, 10)
+
 
     set_accent_color!(downloadRankings, WIDGET_COLOR_ACCENT, false)
 
@@ -175,6 +177,7 @@ function standings(mainWindow)
 
     
     popOutStength = Mousetrap.Button()
+    set_margin!(popOutStength, 10)
 
     set_accent_color!(popOutStength, WIDGET_COLOR_ACCENT, false)
 
@@ -194,7 +197,7 @@ function standings(mainWindow)
 
     push_back!(topWindow,Mousetrap.Label(" --- "))
 
-    mButtons = MenuButtons(runSwissDraw=false)
+    mButtons = MenuButtons(standings=false)
 
     set_horizontal_alignment!(mButtons, ALIGNMENT_CENTER)
     set_vertical_alignment!(mButtons, ALIGNMENT_END)
