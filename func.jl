@@ -895,8 +895,9 @@ function CreateNextRound!(_SwissDraw::SwissDraw; refresh=false)
         for j in 1:fieldSz
 
             # This gets the distance that the two prior fields are apart from the prospective field. 
+            # add a 1 in case they are all (0,0)
             fieldCost[i,j] = (_swissDrawObject.layout.distanceMatrix[ schedule.fieldNumberA[i], j ] ^2 + 
-                              _swissDrawObject.layout.distanceMatrix[ schedule.fieldNumberB[i], j ] ^2 )
+                              _swissDrawObject.layout.distanceMatrix[ schedule.fieldNumberB[i], j ] ^2 ) + 1
 
             # This checks if the prospective field is a streamed field
             StreamedCost[i,j] = _swissDrawObject.layout.fieldDF.stream[j] * -1 + 1
@@ -929,6 +930,7 @@ function CreateNextRound!(_SwissDraw::SwissDraw; refresh=false)
     # println(unique(StreamedCost))
     # println(unique(TeamStreamedCost))
     # println(unique(fieldCost))
+    # println(unique(TeamRankStream))
 
     streamM = 
         StreamedCost .+ 
