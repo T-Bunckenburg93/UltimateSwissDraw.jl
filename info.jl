@@ -406,5 +406,21 @@ end
 
 
 
+# info = Mousetrap.Label("
+# Columns needed:
 
+#     Team spreadsheet:
+#         'team' - The name and identifier of the team. 
+#             Note and odd number of teams will result in 
+#             a 'BYE' team being created.
+#         'rank' - The inital seeding. if you have no 
+#                 idea of the seeding random is fine
 
+#     Field spreadsheet:
+#         'number' - The number and identifier of the field
+#         'x' - the x position of the field
+#         'y' - the y position of the field
+#         'stream' - if the field will be streamed or not. 
+#                 This is intended for as many teams to 
+#                 get a streamed game. 
+#     ")
