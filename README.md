@@ -1,22 +1,17 @@
 # SwissDraw.jl
 Swiss Draw implemented in Julia.
 
-Julia 1.10.0 or greater is advised. 
-
 # To install:
 
-Download from github onto local machine. VS code with the Julia extension is weakly advised to run code, or you can use a terminal from inside the folder. 
+Julia 1.10.0 or greater is advised. 
+
+Download from github onto local machine. VS code with the Julia extension is advised 
 
 run init.jl either from inside vscode, or via shell. This should download and install all the packages
 
-Then just run main.jl and either create a new swiss draw from inital_teams.csv and field_distances.csv, or load a sample swiss draw from div2Seeding.swissdraw to get a feel for how it works. 
+Then just run main.jl and either create a new swiss draw from inital_teams.csv and field_distances.csv, or load an existing swiss draw from div2Seeding.swissdraw
 
-for help running and understanding the swiss draw, the ? button should give you guidance for creating your own swiss draw, or generally understanding how it all works!
-
-`julia init.jl`
-`julia main.jl`
-
-
+The current state of the repo is rough, and design and layout elements are to be seriously  considered at a later date. 
 
 ## What is a Swiss Draw? 
 
